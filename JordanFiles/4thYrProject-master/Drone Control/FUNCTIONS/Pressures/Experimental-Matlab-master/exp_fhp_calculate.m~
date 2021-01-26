@@ -1,0 +1,83 @@
+function d = exp_fhp_calculate(c,P_5HP,probe,Iota,Tau,coeffs)
+% Given a calibration map and measured pressures calculate flow field
+
+% Default to Hodson & Dominy style coefficients
+if exist('coeffs','var') == 0
+    coeffs = 'hodson';
+end
+
+% Run this line depending on whether probe channels are labelled same as
+% channel or channel+2 
+probe.N.P_cn = 1; probe.N.P_up = 2; probe.N.P_dn = 3; probe.N.P_lf = 5; probe.N.P_rt = 4;
+
+% % Default probe numbering
+% if isfield(probe,'N') == 0
+%     probe.N.P_cn = 1; probe.N.P_ur = 2; probe.N.P_ul = 3; probe.N.P_dl = 4; probe.N.P_dr = 5;
+% end
+
+% Reshape pressures to operate on any number of data points
+P_size = size(P_5HP); P_5HP = reshape(P_5HP,[],5); 
+Iota = reshape(Iota,[],1); Tau = reshape(Tau,[],1);
+
+% Calculate yaw and pitch coefficients
+P_cn = P_5HP(:,probe.N.P_cn);
+if strcmp(probe.arrange,'plus') == 1 && strcmp(coeffs,'hodson') == 1
+    P_up = P_5HP(:,probe.N.P_up); P_dn = P_5HP(:,probe.N.P_dn); 
+    P_rt = P_5HP(:,probe.N.P_rt); P_lf = P_5HP(:,probe.N.P_lf); 
+    P_av = 0.25 * (P_up + P_dn + P_rt + P_lf);
+    C_Beta = (P_up - P_dn) ./ (P_cn - P_av);
+    C_Alpha = (P_rt - P_lf) ./ (P_cn - P_av);
+elseif strcmp(probe.arrange,'cross') == 1 && strcmp(coeffs,'hodson') == 1
+    P_ur = P_5HP(:,probe.N.P_ur); P_ul = P_5HP(:,probe.N.P_ul); 
+    P_dl = P_5HP(:,probe.N.P_dl); P_dr = P_5HP(:,probe.N.P_dr);
+    P_av = 0.25 * (P_ur + P_ul + P_dl + P_dr);
+    
+    C_Beta = 0.5 * (P_ur + P_ul - P_dr - P_dl) ./ (P_cn - P_av);
+    C_Alpha = 0.5 * (P_ur + P_dr - P_ul - P_dl) ./ (P_cn - P_av);
+elseif strcmp(probe.arrange,'plus') == 1 && strcmp(coeffs,'curtis') == 1
+    
+    
+elseif strcmp(probe.arrange,'cross') == 1 && strcmp(coeffs,'curtis') == 1
+    P_ur = P_5HP(:,probe.N.P_ur); P_ul = P_5HP(:,probe.N.P_ul); 
+    P_dl = P_5HP(:,probe.N.P_dl); P_dr = P_5HP(:,probe.N.P_dr);
+    P_sort = sort(cat(4,P_ur,P_ul,P_dl,P_dr),4);
+    P_ref = (2/3) * P_cn + (1/3) * mean(P_sort(:,:,:,[3 4]),4) - mean(P_sort(:,:,:,[1 2]),4);
+    C_Beta = 0.5 * (P_ur + P_ul - P_dr - P_dl) ./ P_ref;
+    C_Alpha = 0.5 * (P_ur + P_dr - P_ul - P_dl) ./ P_ref;
+end
+
+% Record pitch and yaw coefficients
+d.C_Alpha = reshape(C_Alpha,[P_size(1:end-1) 1]);
+d.C_Beta = reshape(C_Beta,[P_size(1:end-1) 1]);
+
+% Two dimensional interpolation in pitch and yaw coefficients for flow
+% angles using highest Reynolds number from calibration map if more than one speed specified
+n_2d = size(c.Re,3);
+Q = cat(3,c.Iota,c.Tau,c.C_Po(:,:,n_2d),c.C_P(:,:,n_2d));
+qi = interp_2D(c.C_Alpha(:,:,n_2d),c.C_Beta(:,:,n_2d),Q,C_Alpha,C_Beta);
+
+% Get gas angles from interpolate and add on probe offsets
+Alpha = qi(:,:,1) + Iota; Beta = qi(:,:,2) + Tau;
+
+% Record pressure coefficients
+d.C_Po = qi(:,:,3); d.C_P = qi(:,:,4);
+
+% Calculate fluid properties from total and static coefficients
+if strcmp(coeffs,'hodson') == 1
+    Po = qi(:,:,3) .* (P_cn - P_av) + P_cn;
+    P = Po - qi(:,:,4) .* (P_cn - P_av);
+elseif strcmp(coeffs,'curtis') == 1
+    Po = qi(:,:,3) .* P_ref + P_cn;
+    P = Po - qi(:,:,4) .* P_ref;
+end
+
+% Record 2d calibration grid flow parameters
+d.Po = reshape(Po,[P_size(1:end-1) 1]);
+d.P = reshape(P,[P_size(1:end-1) 1]);
+d.Alpha = reshape(Alpha,[P_size(1:end-1) 1]);
+d.Beta = reshape(Beta,[P_size(1:end-1) 1]);
+d.C_Po = reshape(d.C_Po,[P_size(1:end-1) 1]);
+d.C_P = reshape(d.C_P,[P_size(1:end-1) 1]);
+
+
+end

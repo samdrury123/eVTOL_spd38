@@ -1,4 +1,4 @@
-clear all;
+clear; close;
 Th = 1500; % Thrust
 u0 = 2*25.7; % Flight speed
 D = 1.4; % Casing diameter
@@ -56,8 +56,8 @@ p4 = patm;
 % Guess T03 and initiate losses for iteration loops
 T03 = 293; 
 T04 = T03;
-Lr = 0;
-Ls = 0;
+Lr = 0;     % Entropy change in rotor
+Ls = 0;     % Entropy change in stator
 deltaLr = 1;
 deltaLs = 1;
 
@@ -184,6 +184,15 @@ vel2x = [vx2 vx3];
 Temp1 = [T1 T2];
 rho = [ro1 ro2];
 
+Nb =        [0,0];
+BLT_SS =    [0,0];
+BLT_PS =    [0,0];
+prof1 =     [0,0];
+prof2 =     [0,0];
+base =      [0,0];
+tip =       [0,0];
+endwall =   [0,0];
+
 % Loop through each blade row
 for rr=1:2
   % Blade Geometry
@@ -194,16 +203,17 @@ for rr=1:2
   % Use Lieblein to get pitch-to-chord
   delvt = abs(vel1t(rr) - vel2t(rr));
   sc_rat = (DF - (1 - vel2(rr)./vel1(rr))) * 2 .* vel1(rr)  ./ delvt; 
-  solid = 1/sc_rat;
+%   solid = 1/sc_rat;
   s = C*sc_rat;
 %   Nb(rr) = 2*pi*rm / s;
   Nb(rr) = round(2*pi*rm / s);
-  s = 2 * pi * rm / (round(2*pi*rm / s));
+%   s = 2 * pi * rm / (round(2*pi*rm / s));
+  s = 2 * pi * rm / Nb(rr);
   solid = C/s;
 
   % Shape factors for BL equations
-  H = 2;
-  He = 4*H/(3*H-1);
+  H = 2;            % DT / MT - **How was this selected?**
+  He = 4*H/(3*H-1); % ET / MT
 
   %Dissipation Coefficient as function of Reynolds
   Re = vel1(rr)*C*rho(rr) / 18e-6;
@@ -293,7 +303,7 @@ P = mdot * cp*(T03-T01);
 Reaction = (T2-T1)/(T3-T1);
 
 % Tip Mach Number
-Mtip = (rpm/60*2*pi*rc) / (gam*R*T1)^0.5;
+Mtip2 = (rpm/60*2*pi*rc) / (gam*R*T1)^0.5;
 
 % Propulsive efficiency and hover figure of merit
 Fr = 2*u0 / (u0+u4);
@@ -335,16 +345,22 @@ figure;set(gcf, 'color', 'w'); grid off; box on;
 set(gcf,'Position',[20 50 1000 600]);
 subplot(2,3,1)
 contourf(phis,sigmas,etas,25, 'edgecolor','none'); colorbar
+title("Fan efficiency \eta_a"); xlabel("\phi"); ylabel("\sigma");
 subplot(2,3,2)
 contourf(phis,sigmas,Frs,25, 'edgecolor','none'); colorbar
+title("Propulsive efficiency \eta_p"); xlabel("\phi"); ylabel("\sigma");
 subplot(2,3,3)
 contourf(phis,sigmas,etas.*Frs,25, 'edgecolor','none'); colorbar
+title("Overall efficiency \eta_{ov}"); xlabel("\phi"); ylabel("\sigma");
 subplot(2,3,4)
 contourf(phis,sigmas,rpms,25, 'edgecolor','none'); colorbar
+title("RPM"); xlabel("\phi"); ylabel("\sigma");
 subplot(2,3,5)
 contourf(phis,sigmas,Nr,25, 'edgecolor','none'); colorbar
+title("Rotor blades"); xlabel("\phi"); ylabel("\sigma");
 subplot(2,3,6)
 contourf(phis,sigmas,Ns,25, 'edgecolor','none'); colorbar
+title("Stator blades"); xlabel("\phi"); ylabel("\sigma");
 
 
 

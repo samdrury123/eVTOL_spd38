@@ -1,4 +1,7 @@
 clear; close;
+
+%% SPD Improving While Loops
+
 Th = 1500; % Thrust
 u0 = 2*25.7; % Flight speed
 D = 1.4; % Casing diameter

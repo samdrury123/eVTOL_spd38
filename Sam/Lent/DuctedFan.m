@@ -1,20 +1,38 @@
 clear; close;
 
 %% SPD Improving While Loops
+bluebear = 0;
 
-Th = 1500; % Thrust
-u0 = 2*25.7; % Flight speed
-D = 1.4; % Casing diameter
-alt = 0; % Altitude in m
-htrat = 0.3; % Hub-to-tip ratio
-AR = 4; % Blade aspect ratio
-Cdnom = 0.002; % Nominal dissipation coefficient for BL loss
-tTE = 0.003; % Trailing edge thickness, this should be a % of chord
-tmax = 0.02; % Max blade thickness, this should be a % of chord
-g = 0.001; % Shroud clearance in m
-Cc = 0.6; % Contraction coefficient for shroud loss calculation
-sigmalist = [0.7 0.8 0.9 1 1.1 1.2]; 
+if bluebear == 1
+    Th = 1500; % Thrust
+    u0 = 2*25.7; % Flight speed
+    D = 1.4; % Casing diameter
+    alt = 0; % Altitude in m
+    htrat = 0.3; % Hub-to-tip ratio
+    AR = 4; % Blade aspect ratio
+    Cdnom = 0.002; % Nominal dissipation coefficient for BL loss
+    tTE = 0.003; % Trailing edge thickness, this should be a % of chord
+    tmax = 0.02; % Max blade thickness, this should be a % of chord
+    g = 0.001; % Shroud clearance in m
+    Cc = 0.6; % Contraction coefficient for shroud loss calculation
+else % Whittle eVTOL
+    Th = 10; % Thrust
+    u0 = 0; % Flight speed
+    D = 0.06*2; % Casing diameter
+    alt = 0; % Altitude in m
+    htrat = 1/3; % Hub-to-tip ratio
+    AR = 1.8; % Blade aspect ratio
+    Cdnom = 0.00002; % Nominal dissipation coefficient for BL loss
+    tTE = 0.0005; % Trailing edge thickness, in m
+    tmax = 0.003; % Max blade thickness, in m
+    g = 0.001; % Shroud clearance in m
+    Cc = 0.6; % Contraction coefficient for shroud loss calculation
+end
+
+sigmalist = [0.8 0.9 1 1.1 1.2]; 
+% sigmalist = [0.8 0.9]; 
 philist = [0.5 0.6 0.7 0.8 0.9];
+% philist = [0.7 0.8];
 DF=0.35; % Diffusion factor for Lieblein
 
 [Tatm,patm,roatm,~] = Altitude(alt); % At sea level
@@ -24,13 +42,18 @@ gam = 1.4;
 R = 287;
 cp = gam*R / (gam-1);
 
+Lr_count = zeros(size(philist,2),size(sigmalist,2));
+Ls_count = zeros(size(philist,2),size(sigmalist,2));
+deltaT_count = zeros(size(philist,2),size(sigmalist,2));
+BL_count = zeros(size(philist,2),size(sigmalist,2),2);
+deltavx_count = zeros(size(philist,2),size(sigmalist,2));
+
 
 for pp = 1:size(philist,2)
     for ss = 1:size(sigmalist,2)
     tic
 phi = philist(pp);
 sigma = sigmalist(ss);
-
 
 % Calculate geometry
 rc = D/2; 
@@ -63,14 +86,17 @@ Lr = 0;     % Entropy change in rotor
 Ls = 0;     % Entropy change in stator
 deltaLr = 1;
 deltaLs = 1;
-
+Lr_c=0; Ls_c=0;
 % Iteation loop for losses, improve while criterion (i.e. % change)
-while abs(deltaLr) > 0.0001 && abs(deltaLs) > 0.0001
+while abs(deltaLr) > 0.001/100 && abs(deltaLs) > 0.01/100
+    Lr_c = Lr_c+1;
+    Ls_c = Ls_c+1;
 
 %% Iteration loop to find T03 and T04, again improve so not absolute value
 deltaT=1;
-while abs(deltaT) > 0.005
-    
+deltaT_c = 0;
+while abs(deltaT) > 0.001/100 %0.005 Now changing to percentagedeltaT_count
+    deltaT_c = deltaT_c+1;
     % Non-dimensional momentum equation with impulse function (see 3A3 EP2,Q1)
     Thcalc = A4.* (Fnd .* Mndp .* p4 - patm) - Mndp .* (cp*T04).^-0.5 .* p4 .* A4 .* u0;
     M4 = interp1(Thcalc,M,Th);
@@ -108,11 +134,11 @@ while abs(deltaT) > 0.005
     T03s = T01 .* (p03/p01).^((gam-1)/gam);
     
     % Calculate change for while loop
-    deltaT = T03 - T03calc;
+    deltaT = (T03 - T03calc)/T03; %% Add relative term
     T03 = T03calc;
     T04 = T03;   
 end
-
+deltaT_count(pp,ss) = deltaT_c;
 %% Meanline velocity triangles
 % Upstream Rotor
 v1 = u1;
@@ -135,13 +161,28 @@ vt2 = Um * psi;
 vt2r = vt2 - Um;
 p02r=p01r*exp(-Lr/R);
 T02r=T01r;
-vx2 = vx1; %this is a first guess
+if deltaLr == 1
+    vx2 = vx1; %this is a first guess
+end
 deltavx = 1;
 % Iterate to find vx2 with constant area
 % This loop seems to be quite unstable (hence the 0.01 smoothing) and could
 % be improved with bisection method, or Newton-Raphson, etc. This should speed
 % up programme and make it more stable. 
-while abs(deltavx) > 0.00001
+
+% SPD - updated to use the bisection method, starting with boundaries 2%
+% either side of vx1 - stable, negligible speed change from adjusting
+% convergence toleratnce for deltavx. Could set vx2_high = vx1, compressors
+% increase static density so for const A, vx2<vx1 - negligible speed
+% difference, only 1 iteration
+
+deltavx_c = 0;
+bisect_fac = 2/100;
+vx2_low = (1-bisect_fac)*vx1; vx2_high = (1+bisect_fac)*vx1;
+
+while abs(deltavx) > 0.0001/100 %0.00001
+    vx2 = 0.5*(vx2_low + vx2_high);
+    deltavx_c = deltavx_c+1;
    a2 = atand(vt2 / vx2);
    a2r = atand(vt2r / vx2);
    v2 = (vx2^2 + vt2^2)^0.5;
@@ -150,10 +191,20 @@ while abs(deltavx) > 0.00001
    M2r = interp1(Mndp0,M,Mndp02r);
    T2 = T02r - 0.5*v2r^2 / cp;
    vx2calc = (M2r^2*gam*R*T2 - vt2r^2)^0.5;
-   deltavx = vx2-vx2calc;
-   vx2 = vx2-0.01*deltavx;    
+   if (vx2calc - vx2) > 0
+       vx2_low = vx2;
+   else
+       vx2_high = vx2;
+   end
+   deltavx = (vx2-vx2calc)/vx2;
+%    deltavx2 = (vx2-vx2calc);
+%    vx2 = vx2-0.1*deltavx2;
+%    vx2 = vx2calc;
 end
+deltavx_count(pp,ss) = deltavx_c;
 
+% deltavx2
+% vx2
 T02 = T2 + 0.5*v2^2/cp;
 c2 = (gam*R*T2)^0.5;
 M2 = v2/c2;
@@ -205,7 +256,9 @@ for rr=1:2
 
   % Use Lieblein to get pitch-to-chord
   delvt = abs(vel1t(rr) - vel2t(rr));
-  sc_rat = (DF - (1 - vel2(rr)./vel1(rr))) * 2 .* vel1(rr)  ./ delvt; 
+  
+  sc_rat = (DF - (1 - vel2(rr)./vel1(rr))) * 2 .* vel1(rr)  ./ delvt;
+
 %   solid = 1/sc_rat;
   s = C*sc_rat;
 %   Nb(rr) = 2*pi*rm / s;
@@ -227,7 +280,9 @@ for rr=1:2
   BLDT_PS = 0.0001; BLDT_PS_g = 0;
 
   % Iterate velocity profiles and boundary layers. This is explained in Dickens thesis
+  BL_c = 0;
   while abs((BLDT_SS - BLDT_SS_g)/BLDT_SS) > 1e-10 && abs((BLDT_PS - BLDT_PS_g)/BLDT_PS) > 1e-10
+    BL_c = BL_c + 1;
     BLDT_SS_g = BLDT_SS;
     BLDT_PS_g = BLDT_PS;
    
@@ -254,7 +309,7 @@ for rr=1:2
     BLT_SS(rr)=BLDT_SS;
     BLT_PS(rr)=BLDT_PS;
   end
-
+    BL_count(pp,ss,rr) = BL_c;
   % Calculate blade profile and mixing losses - in Dickens and also Denton 1993
   prof1(rr) = 2 * solid * ((BLMT_PS + BLMT_SS)/C) / cosd(ang2(rr)) * (0.5 * vel2(rr)^2 / Temp1(rr));  % mixing losses
   prof2(rr) = (solid*((BLDT_PS + BLDT_SS)/C + tTE/C)/cosd(ang2(rr)))^2 * (0.5 * vel2(rr)^2 / Temp1(rr)); % profile loss
@@ -285,13 +340,14 @@ Lrcalc = prof(1) + base(1) + tip(1) + endwall(1); %1st row
 Lscalc = prof(2) + base(2) + tip(2) + endwall(2); %2nd row
 
 % Change in losses for while loop
-deltaLr = Lrcalc - Lr;
-deltaLs = Lscalc - Ls;
+deltaLr = (Lrcalc - Lr)/Lr;
+deltaLs = (Lscalc - Ls)/Ls;
 Lr = Lrcalc;
 % vx2 = vx2-0.01*deltavx;
 Ls = Lscalc;
 
 end
+Lr_count(pp,ss) = Lr_c; Ls_count(pp,ss) = Ls_c;
 
 display(['phi = ' num2str(phi) '  sigma = ' num2str(sigma) '   Time = ' num2str(toc,3)])
 
@@ -344,7 +400,12 @@ psis(pp,ss) = psi;
     end
 end
 
-figure;set(gcf, 'color', 'w'); grid off; box on;
+counts = [Lr_count,Ls_count;deltaT_count,deltavx_count;BL_count(:,:,1), BL_count(:,:,2)]
+disp("Lr_count,Ls_count")
+disp("deltaT_count,deltavx_count")
+disp("BL_count(:,:,1), BL_count(:,:,2)")
+
+figure(1);set(gcf, 'color', 'w'); grid off; box on;
 set(gcf,'Position',[20 50 1000 600]);
 subplot(2,3,1)
 contourf(phis,sigmas,etas,25, 'edgecolor','none'); colorbar
@@ -364,6 +425,27 @@ title("Rotor blades"); xlabel("\phi"); ylabel("\sigma");
 subplot(2,3,6)
 contourf(phis,sigmas,Ns,25, 'edgecolor','none'); colorbar
 title("Stator blades"); xlabel("\phi"); ylabel("\sigma");
+
+figure(2);set(gcf, 'color', 'w'); grid off; box on;
+set(gcf,'Position',[20 50 1000 600]);
+subplot(2,3,1)
+contourf(phis,psis,etas,25, 'edgecolor','none'); colorbar
+title("Fan efficiency \eta_a"); xlabel("\phi"); ylabel("\psi");
+subplot(2,3,2)
+contourf(phis,psis,Frs,25, 'edgecolor','none'); colorbar
+title("Propulsive efficiency \eta_p"); xlabel("\phi"); ylabel("\psi");
+subplot(2,3,3)
+contourf(phis,psis,etas.*Frs,25, 'edgecolor','none'); colorbar
+title("Overall efficiency \eta_{ov}"); xlabel("\phi"); ylabel("\psi");
+subplot(2,3,4)
+contourf(phis,psis,rpms,25, 'edgecolor','none'); colorbar
+title("RPM"); xlabel("\phi"); ylabel("\psi");
+subplot(2,3,5)
+contourf(phis,psis,Nr,25, 'edgecolor','none'); colorbar
+title("Rotor blades"); xlabel("\phi"); ylabel("\psi");
+subplot(2,3,6)
+contourf(phis,psis,Ns,25, 'edgecolor','none'); colorbar
+title("Stator blades"); xlabel("\phi"); ylabel("\psi");
 
 
 

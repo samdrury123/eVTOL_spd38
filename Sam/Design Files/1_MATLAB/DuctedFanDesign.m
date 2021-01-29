@@ -49,7 +49,7 @@ d.name = '1';
 % ::: 1.1 Design ::: %
 d.phi = 0.8; % Flow coefficient, set to zero for array of designs 
 %                       velocity triangles do not work for this option (yet)
-d.sig = 1.1; %0.5; % Area ratio of exit nozzle, sig = A4/A1. Eq (1) in .ppt. Not used if d.phi=0;
+d.sig = 0.8;%1.1; %0.5; % Area ratio of exit nozzle, sig = A4/A1. Eq (1) in .ppt. Not used if d.phi=0;
 d.rotor_lean = 20; % Lean angle in degrees
 d.rotor_sweep = 4; % Sweep angle in degrees
 d.stator_lean = 20;

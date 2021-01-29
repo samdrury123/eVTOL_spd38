@@ -30,7 +30,8 @@ else % Whittle eVTOL
 end
 
 sigmalist = [0.8 0.9 1 1.1 1.2]; 
-% sigmalist = [0.8 0.9]; 
+% sigmalist = [0.7 0.8 0.9 1 1.1 1.2]; 
+% sigmalist = [0.9 1 1.1]; 
 philist = [0.5 0.6 0.7 0.8 0.9];
 % philist = [0.7 0.8];
 DF=0.35; % Diffusion factor for Lieblein

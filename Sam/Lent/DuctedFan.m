@@ -25,7 +25,7 @@ else % Whittle eVTOL
     Cdnom = 0.00002; % Nominal dissipation coefficient for BL loss
     tTE = 0.0005; % Trailing edge thickness, in m
     tmax = 0.003; % Max blade thickness, in m
-    g = 0.001; % Shroud clearance in m
+    g = 0.0005; % Shroud clearance in m
     Cc = 0.6; % Contraction coefficient for shroud loss calculation
 end
 

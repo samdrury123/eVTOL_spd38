@@ -264,7 +264,7 @@ if p==1
 end
 
 %%SAM CREATING NEW GRAPH FOR TMR
-if true
+if false
     
     % Plot spanwise distributions
     span = (r - g.rhub)./(g.rcas-g.rhub);

@@ -41,13 +41,13 @@ clear; clc; close;
 %% -- 1. INPUTS -- %%
 
 % CRDF flag
-CRDF_flag = false;
+CRDF_flag = true;
 
 % ::: 1.1 Design Name ::: %
 d.name = '1';
 
 % ::: 1.1 Design ::: %
-d.phi = 0.8; % Flow coefficient, set to zero for array of designs 
+d.phi = 0%.8; % Flow coefficient, set to zero for array of designs 
 %                       velocity triangles do not work for this option (yet)
 d.sig = 0.8;%1.1; %0.5; % Area ratio of exit nozzle, sig = A4/A1. Eq (1) in .ppt. Not used if d.phi=0;
 d.rotor_lean = 20; % Lean angle in degrees
@@ -151,13 +151,13 @@ if size(d.phi) > 1
      xlabel('phi'), ylabel('sigma'); title('Cruise Stage Loading Coefficient')
      
  % SAM
-    figure(2); set(gcf, 'color', 'w'); grid off; box on; set(gcf,'Position',[20 200 400 400]);
-    contourf(d.phi,d.sig,dhov.Pideal,20); colorbar; hold on;
-    xlabel('\phi'), ylabel('\sigma'); title('Hover Ideal Power (kW)')
-    phi_des = 0.8; sig_des = 1.1;
-    plot(phi_des, sig_des, 'ro', 'MarkerSize', 5, 'LineWidth', 5);
-    hold off;
-    %text(0.25,0.45,'Halve for each CRF row','color','w')
+%     figure(2); set(gcf, 'color', 'w'); grid off; box on; set(gcf,'Position',[20 200 400 400]);
+%     contourf(d.phi,d.sig,dhov.Pideal,20); colorbar; hold on;
+%     xlabel('\phi'), ylabel('\sigma'); title('Hover Ideal Power (kW)')
+%     phi_des = 0.8; sig_des = 1.1;
+%     plot(phi_des, sig_des, 'ro', 'MarkerSize', 5, 'LineWidth', 5);
+%     hold off;
+%     text(0.25,0.45,'Halve for each CRF row','color','w')
 
 end
 

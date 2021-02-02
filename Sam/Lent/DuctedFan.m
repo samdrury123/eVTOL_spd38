@@ -7,6 +7,9 @@ CRDF_flag = 0; % Change this maybe?
 %% Still to add:
 % Vortex exponent
 % Radial equilibrium
+% Couple these with the blade profile losses
+% Check what needs to be sent to CAD
+% Improve variable naming for velocities - make location an index
 
 %% Input variables
 
@@ -70,8 +73,6 @@ for pp = 1:size(philist,2)
 
 d.phi = philist(pp);
 d.sigma = sigmalist(ss);
-
-
 
 L.Lr = 0;     % Entropy change in rotor
 L.Ls = 0;     % Entropy change in stator
@@ -139,9 +140,14 @@ psis(pp,ss) = d.psi;
 FOMs(pp,ss) = Mf;
 
 % Store outputs in structures
+design(pp,ss).phisig = [d.phi, d.sigma];
 design(pp,ss).d = d;
-design(pp,ss).q = q;
 design(pp,ss).g = g;
+design(pp,ss).a = a;
+design(pp,ss).q = q;
+design(pp,ss).L = L;
+
+
     
     end
 end

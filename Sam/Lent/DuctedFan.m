@@ -33,8 +33,10 @@ end
 sigmalist = [0.8 0.9 1 1.1 1.2]; 
 % sigmalist = [0.7 0.8 0.9 1 1.1 1.2]; 
 % sigmalist = [0.9 1 1.1]; 
-philist = [0.5 0.6 0.7 0.8 0.9];
-% philist = [0.7 0.8];
+% philist = [0.5 0.6 0.7 0.8 0.9];
+philist = [0.5 0.6 0.7 0.8];
+% sigmalist=1.2;
+% philist=.8;
 DF=0.35; % Diffusion factor for Lieblein
 
 [Tatm,patm,roatm,~] = Altitude(alt); % At sea level
@@ -161,7 +163,7 @@ T01r = T1+0.5*v1r^2/cp;
 Mndp01r = gam / (gam-1)^0.5 .* M1r .* (1 + (gam-1)/2.*M1r.^2).^(-0.5*(gam+1)/(gam-1));
 
 % Downstream Rotor - Slightly tricky because A is constant not vx
-vt2 = U1 * psi;% / (1-CRDF_flag/2);
+vt2 = U1 * psi / (1-CRDF_flag/2); %%%%CHECK THISSSS
 vt2r(1) = vt2 - U1;
 vt2r(2) = vt2 - U2;
 p02r(1)=p01r*exp(-Lr/R);
@@ -301,6 +303,11 @@ for rr=1:2
   delvt = abs(vel1t(rr) - vel2t(rr));
   
   sc_rat = (DF - (1 - vel2(rr)./vel1(rr))) * 2 .* vel1(rr)  ./ delvt;
+%   if sc_rat<0 
+%       disp('NEG')
+%   else
+%       disp('POS')
+%   end
 
 %   solid = 1/sc_rat;
   s = C*sc_rat;
@@ -370,7 +377,7 @@ for rr=1:2
   hb = rc - rh;
   mm = (g * Cc / hb) * ((tand(ang1(rr)))^2 - (tand(ang2(rr)))^2)^0.5; % Yoon 5 %(g * Cc / hn) * (abs((1/cosd(ang2))^2 - (tand(ang1))^2 ))^0.5 % # mm = (g_s * Cc / H_b) * np.sqrt( (1/np.cos(a2))**2 - (np.tan(a2))**2 ) 
   tip(rr) =  2 * mm * (1 - (tand(ang1(rr)) * sind(ang2(rr)) * cosd(ang2(rr))) ) * (0.5 * vel2(rr)^2 / Temp1(rr)); % Yoon 6
-   %       #tip =  mm * V2**2 * abs( 1 - (np.tan(a1) * np.sin(a2) * np.cos(a2)) ) / T #valid for compressible
+  % #tip =  mm * V2**2 * abs( 1 - (np.tan(a1) * np.sin(a2) * np.cos(a2)) ) / T #valid for compressible
  
   % Endwall Loss - comes from cd*V^3 argument but need to think about some more - important mechanisms I think
   endwallfun = @(x) (((vLE_SS + (vTE - vLE_SS)*x/Cx)).^3 + ((vLE_PS + (vTE - vLE_PS)*x/Cx)).^3)/2;

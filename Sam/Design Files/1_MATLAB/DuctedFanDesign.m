@@ -49,15 +49,15 @@ d.name = '1';
 % ::: 1.1 Design ::: %
 d.phi = 0%.8; % Flow coefficient, set to zero for array of designs 
 %                       velocity triangles do not work for this option (yet)
-d.sig = 0.8;%1.1; %0.5; % Area ratio of exit nozzle, sig = A4/A1. Eq (1) in .ppt. Not used if d.phi=0;
+d.sig = 1.1;%1.1; %0.5; % Area ratio of exit nozzle, sig = A4/A1. Eq (1) in .ppt. Not used if d.phi=0;
 d.rotor_lean = 20; % Lean angle in degrees
 d.rotor_sweep = 4; % Sweep angle in degrees
 d.stator_lean = 20;
 d.stator_sweep = 4;
 
 if d.phi==0
-   phi1d = (0.2:0.05:1.0)'; %%CHANGED TO 0.9 from 0.8
-   sig1d = (0.4:0.05:1.2)';
+   phi1d = (0.5:0.1:0.8)';%(0.2:0.05:1.0)'; %%CHANGED TO 0.9 from 0.8
+   sig1d = (0.8:0.1:1.2)';%(0.4:0.05:1.2)';
    d.phi = repmat(phi1d',[size(sig1d),1]);
    d.sig = repmat(sig1d,[1,size(phi1d)]);
 end
@@ -100,7 +100,7 @@ NRF.blades = [0 0]; % Manually set number of blades:
 CRF.AR = 2.7;
 CRF.DF = 0.38;
 CRF.n = 0.3; % exponent for vortex design of contra-rotating fan, n=1 is free, n=-1 is forced
-CRF.blades = [13 11]; % Manually set number of blades, as above for NRF
+CRF.blades = [0 0];%[13 11]; % Manually set number of blades, as above for NRF
 CRF.cman = [1.4,1;1.2,1]; % Scale calculated chord distribution [hub B1,cas B1;hub B2, casB2]. 
   
 %% ---- 2. CONTROL VOLUME ANALYSIS ---- %%
@@ -182,7 +182,7 @@ if size(d.phi) == 1
    NRF.bl1 = Make_Blade(NRF.g.chi(:,1,1),NRF.g.chi(:,2,1),NRF.g.r,NRF.g.c(:,1),1,1,d);    
    NRF.bl2 = Make_Blade(NRF.g.chi(:,1,2),NRF.g.chi(:,2,2),NRF.g.r,NRF.g.c(:,2),2,1,d);
    txt = {'Blades:', NRF.g.N'};
-   %text(0.01,0,txt)
+   text(0.01,0,txt)
     
    if CRDF_flag == true
        CRF.bl1 = Make_Blade(CRF.g.chi(:,1,1),CRF.g.chi(:,2,1),CRF.g.r,CRF.g.c(:,1),1,2,d);    

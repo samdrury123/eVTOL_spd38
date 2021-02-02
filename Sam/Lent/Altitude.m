@@ -1,4 +1,4 @@
-function [T,P,ro,mu] = Altitude(ht)
+function [atmos] = Altitude(ht)
 
 Tsl = 273+15;
 Psl = 101325;
@@ -11,7 +11,7 @@ Prat = [1	0.887	0.7846	0.692	0.6085	0.5334	0.466	0.4057	0.3519	0.304	0.2615	0.22
 rorat = [1	0.9075	0.8217	0.7422	0.6689	0.6012	0.5389	0.4816	0.4292	0.3813	0.3376	0.2978	0.2546	0.2176	0.186	0.159	0.1359	0.1162	0.0993	0.0849	0.0726	0.0618	0.0527	0.0449	0.0383	0.0327	0.028	0.0239	0.0205	0.0175	0.015];
 murat = [1	1.0826	1.1739	1.2753	1.3881	1.5138	1.6543	1.8117	1.9887	2.1881	2.4137	2.6697	3.1206	3.6514	4.2722	4.9983	5.8476	6.8408	8.0023	9.3606	10.9488	12.9031	15.2021	17.8964	21.0515	24.7434	29.0603	34.1039	39.9926	46.8626	54.8714];
 
-T  = interp1(hts,Trat,ht) * Tsl;
-P  = interp1(hts,Prat,ht) * Psl;
-ro  = interp1(hts,rorat,ht) * rosl;
-mu = interp1(hts,murat,ht) * musl;
+atmos.T  = interp1(hts,Trat,ht) * Tsl;
+atmos.P  = interp1(hts,Prat,ht) * Psl;
+atmos.ro  = interp1(hts,rorat,ht) * rosl;
+atmos.mu = interp1(hts,murat,ht) * musl;

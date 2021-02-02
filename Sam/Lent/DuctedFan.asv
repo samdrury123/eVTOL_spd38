@@ -2,7 +2,7 @@ clear; close;
 
 %% SPD Structuring 02/02
 bluebear = 0;
-CRDF_flag = 0; % Change this maybe?
+CRDF_flag = 0;
 
 %% Still to add:
 % Vortex exponent
@@ -11,7 +11,7 @@ CRDF_flag = 0; % Change this maybe?
 %% Input variables
 
 if bluebear == 1
-    d.name = 'Blue Bear';
+    d.name = 'Blue Bear'
     d.Th = 1500; % Thrust
     d.u0 = 2*25.7; % Flight speed
     d.alt = 0; % Altitude in m
@@ -28,7 +28,7 @@ if bluebear == 1
     g.tmax = 0.02; % Max blade thickness, this should be a % of chord
     g.gap = 0.001; % Shroud clearance in m
 else % Whittle eVTOL
-    d.name = 'The Rt.Hon Whittle eVTOL';
+    d.name = 'The Rt.Hon Whittle eVTOL'
     d.Th = 10; % Thrust
     d.u0 = 0; % Flight speed
     d.alt = 0; % Altitude in m
@@ -77,17 +77,21 @@ L.Lr = 0;     % Entropy change in rotor
 L.Ls = 0;     % Entropy change in stator
 L.deltaLr = 1;
 L.deltaLs = 1;
-
+% Lr_c=0; Ls_c=0;
 % Iteation loop for losses, improve while criterion (i.e. % change)
 while abs(L.deltaLr) > 0.001/100 && abs(L.deltaLs) > 0.01/100
-%% Iteration loop to find T03 and T04, again improve so not absolute value
-[d,g,q] = CVanalysis_comp(d,g,q,L, CRDF_flag);
-%% Meanline velocity triangles
-[a,q] = VelTriangles(d,q,L,CRDF_flag);
-%% Evaluate analytical velocity profiles and loss for each blade row, plus calculate shroud clearance and endwall losses
-[g,L] = BladeLoss(d,g,a,q,L); % Return Re?
-end
 
+%% Iteration loop to find T03 and T04, again improve so not absolute value
+[d,g,q] = CVanalysis_comp(d,g,q,L);
+% deltaT_count(pp,ss) = deltaT_c;
+%% Meanline velocity triangles
+[a,q] = VelTriangles(d,g,L);
+
+%% Evaluate analytical velocity profiles and loss for each blade row, plus calculate shroud clearance and endwall losses
+
+[g,L] = BladeLoss(d,g,a,q,Lr,Ls); % Return Re?
+
+end
 %% Summarise
 display(['phi = ' num2str(d.phi) '  sigma = ' num2str(d.sigma) '   Time = ' num2str(toc,3) ]);
 
@@ -107,7 +111,7 @@ Mtip2 = (d.rpm/60*2*pi*g.rc) / (gam*R*q.T1)^0.5;
 
 % Propulsive efficiency and hover figure of merit
 Fr = 2*d.u0 / (d.u0+d.u4);
-Mf = d.Th / P * sqrt(d.Th / (2*q.atm.ro*g.A1));
+Mf = d.Th / P * sqrt(d.Th / (2*q.atm.roatm*g.A1));
 
 % Fan Efficiency
 eta = (q.T03s - q.T01) / (q.T03 - q.T01);
@@ -146,6 +150,9 @@ design(pp,ss).g = g;
     end
 end
 %% Plotting
+disp("Lr_count,Ls_count")
+disp("deltaT_count,deltavx_count")
+disp("BL_count(:,:,1), BL_count(:,:,2)")
 
 figure(1);set(gcf, 'color', 'w'); grid off; box on;
 set(gcf,'Position',[20 50 1300 600]);
@@ -184,7 +191,7 @@ title("Fan efficiency \eta_a"); xlabel("\phi"); ylabel("\psi");
 subplot(2,3,2)
 contourf(phis,psis,Frs,25, 'edgecolor','none'); colorbar
 title("Propulsive efficiency \eta_p"); xlabel("\phi"); ylabel("\psi");
-if d.u0 == 0
+if u0 == 0
     subplot(2,3,3)
     contourf(phis,psis,FOMs,25, 'edgecolor','none'); colorbar
     title("Figure of Merit"); xlabel("\phi"); ylabel("\psi");

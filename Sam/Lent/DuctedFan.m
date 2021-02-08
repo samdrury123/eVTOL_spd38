@@ -1,4 +1,4 @@
-clear; close;
+clear; close all;
 
 %% SPD Structuring 02/02
 bluebear = 0;
@@ -35,7 +35,7 @@ else % Whittle eVTOL
     d.Th = 10; % Thrust
     d.u0 = 0; % Flight speed
     d.alt = 0; % Altitude in m
-    d.Cdnom = 0.0002; % Nominal dissipation coefficient for BL loss (Dickens p154)
+    d.Cdnom = 0.002; % Nominal dissipation coefficient for BL loss (Dickens p154)
     d.Cc = 0.6; % Contraction coefficient for shroud loss calculation - Yoon p5 quotes Cd = 0.7
     d.DF = 0.35; % Diffusion factor for Lieblein
     
@@ -56,7 +56,7 @@ cp = gam*R / (gam-1);
 q.gam=gam; q.R=R; q.cp=cp;
 
 sigmalist = [0.8 0.9 1 1.1 1.2]; 
-% sigmalist = [0.7 0.8 0.9 1 1.1 1.2]; 
+sigmalist = [0.7 0.8 0.9 1 1.1 1.2]; 
 % sigmalist = [0.9 1 1.1];
 % philist = [0.5 0.6 0.7 0.8 0.9];
 philist = [0.5 0.6 0.7 0.8];

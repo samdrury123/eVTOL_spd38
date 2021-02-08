@@ -47,7 +47,7 @@ CRDF_flag = true;
 d.name = '1';
 
 % ::: 1.1 Design ::: %
-d.phi = 0%.8; % Flow coefficient, set to zero for array of designs 
+d.phi = 0.8; % Flow coefficient, set to zero for array of designs 
 %                       velocity triangles do not work for this option (yet)
 d.sig = 1.1;%1.1; %0.5; % Area ratio of exit nozzle, sig = A4/A1. Eq (1) in .ppt. Not used if d.phi=0;
 d.rotor_lean = 20; % Lean angle in degrees

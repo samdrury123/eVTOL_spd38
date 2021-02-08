@@ -62,6 +62,9 @@ for rr=1:2
   sc_rat = (d.DF - (1 - vel2(rr)./vel1(rr))) * 2 .* vel1(rr)  ./ delvt;
   s = C*sc_rat;
   Nb(rr) = round(2*pi*g.rm / s);
+  if Nb(rr)<1 
+      Nb(rr) = NaN;
+  end
   s = 2 * pi * g.rm / Nb(rr);
   solid = C/s;
 
@@ -78,9 +81,7 @@ for rr=1:2
   BLDT_PS = 0.0001; BLDT_PS_g = 0;
 
   % Iterate velocity profiles and boundary layers. This is explained in Dickens thesis
-%   BL_c = 0;
   while abs((BLDT_SS - BLDT_SS_g)/BLDT_SS) > 1e-10 && abs((BLDT_PS - BLDT_PS_g)/BLDT_PS) > 1e-10
-%     BL_c = BL_c + 1;
     BLDT_SS_g = BLDT_SS;
     BLDT_PS_g = BLDT_PS;
    
@@ -123,8 +124,8 @@ for rr=1:2
   % Shroud Loss - From Sungho Yoon Paper based on shroud losses for turbines in Denton
   hb = g.rc - g.rh;
   mm = (g.gap * d.Cc / hb) * ((tand(ang1(rr)))^2 - (tand(ang2(rr)))^2)^0.5; % Yoon 5 %(g * Cc / hn) * (abs((1/cosd(ang2))^2 - (tand(ang1))^2 ))^0.5 % # mm = (g_s * Cc / H_b) * np.sqrt( (1/np.cos(a2))**2 - (np.tan(a2))**2 ) 
-  tip(rr) =  2 * mm * (1 - (tand(ang1(rr)) * sind(ang2(rr)) * cosd(ang2(rr))) ) * (0.5 * vel2(rr)^2 / Temp1(rr)); % Yoon 6
-  % #tip =  mm * V2**2 * abs( 1 - (np.tan(a1) * np.sin(a2) * np.cos(a2)) ) / T #valid for compressible
+  tip(rr) =  2 * mm * (1 - (tand(ang1(rr)) * sind(ang2(rr)) * cosd(ang2(rr))) ) * (0.5 * vel2(rr)^2 / Temp1(rr)); %
+  % #tip =  mm * V2**2 * abs( 1 - (np.tan(a1) * np.sin(a2) * np.cos(a2)) ) / T #valid for compressible Yoon 6
  
   % Endwall Loss - comes from cd*V^3 argument but need to think about some more - important mechanisms I think
   endwallfun = @(x) (((vLE_SS + (vTE - vLE_SS)*x/Cx)).^3 + ((vLE_PS + (vTE - vLE_PS)*x/Cx)).^3)/2;

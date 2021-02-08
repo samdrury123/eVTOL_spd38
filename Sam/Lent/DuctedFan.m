@@ -2,7 +2,6 @@ clear; close all;
 
 %% SPD Radial Eq 08/02
 bluebear = 0;
-Chickens =0;
 CRDF_flag = 0; % Change this maybe?
 
 %% Still to add:

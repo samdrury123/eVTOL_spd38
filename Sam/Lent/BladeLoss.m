@@ -29,13 +29,21 @@ function [g,L] = BladeLoss(d,g,a,q,L)
 %% Should unpack some stuff - gets messy
 
 % Set up angles and speeds for each row
-ang1 = [a.a1r a.a2r(2)];
-ang2 = [a.a2r(1) a.a3r];
-vel1 = [a.v1r a.v2r(2)];
-vel2 = [a.v2r(1) a.v3r];
-vel1t = [a.vt1r a.vt2r(2)];
-vel2t = [a.vt2r(1) a.vt3r];
-vel1x = [a.vx1 a.vx2]; 
+% ang1 = [a.a1r a.a2r(2)];
+% ang2 = [a.a2r(1) a.a3r];
+% vel1 = [a.v1r a.v2r(2)];
+% vel2 = [a.v2r(1) a.v3r];
+% vel1t = [a.vt1r a.vt2r(2)];
+% vel2t = [a.vt2r(1) a.vt3r];
+% vel1x = [a.vx1 a.vx2];
+imid=4; %%CHANGE THISSS
+ang1 = [a.alpha(imid,1,2) a.alpha(imid,2,3)];
+ang2 = [a.alpha(imid,2,2) a.alpha(imid,3,3)];
+vel1 = [a.v(imid,1,2) a.v(imid,2,3)];
+vel2 = [a.v(imid,2,2) a.v(imid,3,3)];
+vel1t = [a.vth(imid,1,2) a.vth(imid,2,3)];
+vel2t = [a.vth(imid,2,2) a.vth(imid,3,3)];
+vel1x = [a.vx(imid,1,1) a.vx(imid,2,1)]; 
 %vel2x = [a.vx2 a.vx3];
 Temp1 = [q.T1 q.T2];
 rho = [q.ro1 q.ro2];
@@ -62,7 +70,7 @@ for rr=1:2
   sc_rat = (d.DF - (1 - vel2(rr)./vel1(rr))) * 2 .* vel1(rr)  ./ delvt;
   s = C*sc_rat;
   Nb(rr) = round(2*pi*g.rm / s);
-  if Nb(rr)<1 
+  if Nb(rr)<1 || Nb(rr)>100
       Nb(rr) = NaN;
   end
   s = 2 * pi * g.rm / Nb(rr);
@@ -85,8 +93,8 @@ for rr=1:2
     BLDT_SS_g = BLDT_SS;
     BLDT_PS_g = BLDT_PS;
    
-    vTE = vel2(rr) * (1 - solid * ( (g.tTE + BLDT_SS + BLDT_PS) / (cosd(ang2(rr)) * C) ))^-1; % Dickens 9.2
-    vLE = vel1(rr) * (0.98 + 0.5 * solid * g.tmax/C * vel1x(rr) / delvt); % Dickens 9.3
+    vTE = vel2(rr) * (1 - solid * ( (g.tTE + (BLDT_SS + BLDT_PS)/C) / cosd(ang2(rr))) )^-1; % Dickens 9.2
+    vLE = vel1(rr) * (0.98 + 0.5 * solid * g.tmax * vel1x(rr) / delvt); % Dickens 9.3
    
     ATD = 0; % Roof-top parameter set to 0 - Dickens p147/8
     delv = 3 * vel1x(rr) * delvt / (solid * cosd(stag) * ((2*vLE*(1+2*ATD))+vTE*(1-ATD))); % Dickens 9.1 
@@ -113,16 +121,16 @@ for rr=1:2
   % Calculate blade profile and mixing losses - in Dickens (9.3) and also
   % Denton 1993 A3.7
   prof1(rr) = 2 * solid * ((BLMT_PS + BLMT_SS)/C) / cosd(ang2(rr)) * (0.5 * vel2(rr)^2 / Temp1(rr));  % mixing losses
-  prof2(rr) = (solid*((BLDT_PS + BLDT_SS)/C + g.tTE/C)/cosd(ang2(rr)))^2 * (0.5 * vel2(rr)^2 / Temp1(rr)); % profile loss
+  prof2(rr) = (solid*((BLDT_PS + BLDT_SS)/C + g.tTE) /cosd(ang2(rr)))^2 * (0.5 * vel2(rr)^2 / Temp1(rr)); % profile loss
   % Note - static temps used, but T0 ~ T with low M (~2% error for M=.3)
   % Note - can merge prof1 and prof2...
   
   % Calculate base pressure loss - Dickens (9.11) / Denton
   Cpb = -0.2; % Dickens p156 - based on turbines!
-  base(rr) = - Cpb * solid * (g.tTE/C) / cosd(ang2(rr)) * (0.5 * vel2(rr)^2 / Temp1(rr)); % Base pressure loss
+  base(rr) = - Cpb * solid * g.tTE / cosd(ang2(rr)) * (0.5 * vel2(rr)^2 / Temp1(rr)); % Base pressure loss
 
   % Shroud Loss - From Sungho Yoon Paper based on shroud losses for turbines in Denton
-  hb = g.rc - g.rh;
+  hb = g.rc - g.rh; % span
   mm = (g.gap * d.Cc / hb) * ((tand(ang1(rr)))^2 - (tand(ang2(rr)))^2)^0.5; % Yoon 5 %(g * Cc / hn) * (abs((1/cosd(ang2))^2 - (tand(ang1))^2 ))^0.5 % # mm = (g_s * Cc / H_b) * np.sqrt( (1/np.cos(a2))**2 - (np.tan(a2))**2 ) 
   tip(rr) =  2 * mm * (1 - (tand(ang1(rr)) * sind(ang2(rr)) * cosd(ang2(rr))) ) * (0.5 * vel2(rr)^2 / Temp1(rr)); %
   % #tip =  mm * V2**2 * abs( 1 - (np.tan(a1) * np.sin(a2) * np.cos(a2)) ) / T #valid for compressible Yoon 6
@@ -149,7 +157,7 @@ L.Lr = Lrcalc;
 L.Ls = Lscalc;
 L.rLoss.prof=prof(1); L.rLoss.base=base(1); L.rLoss.tip=tip(1); L.rLoss.endwall=endwall(1);
 L.sLoss.prof=prof(2); L.sLoss.base=base(2); L.sLoss.tip=tip(2); L.sLoss.endwall=endwall(2);
-L.rLoss.BLT_SS=BLT_SS(1); L.rLoss.BLT_PS=BLT_PS(1); L.sLoss.BLT_SS=BLT_SS(2); L.sLoss.BLT_SS=BLT_SS(2); 
+L.rLoss.BLT_SS=BLT_SS(1); L.rLoss.BLT_PS=BLT_PS(1); L.sLoss.BLT_SS=BLT_SS(2); L.sLoss.BLT_PS=BLT_SS(2); 
 
 g.c=C; g.s=s; g.Nb=Nb; %Return Re??
 

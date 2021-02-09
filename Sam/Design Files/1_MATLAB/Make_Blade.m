@@ -14,10 +14,8 @@ fid = fopen(iblfile, 'w');
 fprintf(fid,'Closed Index arclength\n');
 %%SAM
 
-%y needs to be -ve for CW, +ve for CCW
-CW = true; %consider setting this as a global
-if CW == true; rotation = -1; 
-else rotation = 1; end
+rotation = -1; end
+
 
 num_slices = size(chi1,1);
 blade.centreline = zeros(num_slices,3);

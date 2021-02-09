@@ -1,8 +1,8 @@
 %% ---- FUNCTION: CONTROL VOLUME ANALYSIS FOR DUCTED FAN ---- %%
-function [d,g,q] = CVanalysis_comp(d,g,q,L, CRDF)
+function [d,g,q] = CVanalysis_comp(d,g,q,L)
 
 % REDO THIS
-% Function using continuity, SFME and SFEE to analyse ducted fan
+% Function using continuity, SFME and SFEE to analyse ducted fan MEANLINE
 % Inputs: 
 % - atm: atmospheric conditions
 % - g: geometry of fan
@@ -43,13 +43,13 @@ p00 = patm ./ (1 + (gam-1)/2.*M0.^2).^-(gam/(gam-1));
 T00 = Tatm ./ (1 + (gam-1)/2.*M0.^2).^-1;
 
 % Set up Mach Number vector for lookups
-M = 0.001:0.001:1;
+Mach = 0.001:0.001:1;
 
 % Non-dim impulse function for lookups
-Fnd = (gam-1).^0.5 ./ gam .* (1+gam.*M.^2) ./ M .* (1 + (gam-1)/2.*M.^2).^-0.5;
+Fnd = (gam-1).^0.5 ./ gam .* (1+gam.*Mach.^2) ./ Mach .* (1 + (gam-1)/2.*Mach.^2).^-0.5;
 % Non-dim mass flow functions for lookups
-Mndp = gam / (gam-1)^0.5 .* M .* (1 + (gam-1)/2.*M.^2).^0.5;
-Mndp0 = gam / (gam-1)^0.5 .* M .* (1 + (gam-1)/2.*M.^2).^(-0.5*(gam+1)/(gam-1));
+Mndp = gam / (gam-1)^0.5 .* Mach .* (1 + (gam-1)/2.*Mach.^2).^0.5;
+Mndp0 = gam / (gam-1)^0.5 .* Mach .* (1 + (gam-1)/2.*Mach.^2).^(-0.5*(gam+1)/(gam-1));
 
 % Assume exit pressure is atmospheric
 p4 = patm;
@@ -65,7 +65,7 @@ while abs(deltaT) > 0.001/100 %0.005 Now changing to percentagedeltaT_count
 %     deltaT_c = deltaT_c+1;
     % Non-dimensional momentum equation with impulse function (see 3A3 EP2,Q1)
     Thcalc = A4.* (Fnd .* Mndp .* p4 - patm) - Mndp .* (cp*T04).^-0.5 .* p4 .* A4 .* u0;
-    M4 = interp1(Thcalc,M,Th);
+    M4 = interp1(Thcalc,Mach,Th);
     Fnd4 = (gam-1).^0.5 ./ gam .* (1+gam.*M4.^2) ./ M4 .* (1 + (gam-1)/2.*M4.^2).^-0.5;
     
     % Exit conditions 
@@ -81,16 +81,13 @@ while abs(deltaT) > 0.001/100 %0.005 Now changing to percentagedeltaT_count
     % Calculate inlet Mach Number, M1
     Mndp4 = gam / (gam-1)^0.5 .* M4 .* (1 + (gam-1)/2.*M4.^2).^0.5;
     Mndp01 = Mndp4 .* p4./p01 .* (T01./T04).^0.5 .* sigma;
-    M1 = interp1(Mndp0,M,Mndp01);
+    M1 = interp1(Mndp0,Mach,Mndp01);
     T1 = T01 .* (1 + 0.5*(gam-1).*M1.^2).^-1;
     u1 = M1 .* (gam*R*T1)^0.5;
     
     % Blade speed from flow coefficient
     Um = u1/phi;
-    U1 = Um*(1-CRDF/2);
-    U2 = -Um*CRDF/2;
-    rpm = U1 / (2*pi*rm) * 60;
-    Mtip = U1 * rc/rm /(gam*R*T1)^0.5; % U1 = -U2, Mtip equal
+    rpm = Um / (2*pi*rm) * 60;
 
     % Stage loading
     psi = cp*(T04-T01) / Um^2;
@@ -109,8 +106,8 @@ end
 
 %% Repacking into structs
 g.rc=rc; g.rh=rh; g.rm=rm; g.A1=A1; g.A4=A4;
-d.u1=u1; d.u4=u4; d.Um=Um; d.U1=U1; d.U2=U2; d.rpm=rpm; d.psi=psi;
-q.M0=M0; q.M1=M1; q.M4=M4; q.Mtip=Mtip; q.Mndp4=Mndp4; q.Mndp01=Mndp01;
+d.u1=u1; d.u4=u4; d.Um=Um; d.rpm=rpm; d.psi=psi;
+q.M0=M0; q.M1=M1; q.M4=M4; q.Mndp4=Mndp4; q.Mndp01=Mndp01;
 q.T00=T00; q.T01=T01; q.T03=T03; q.T03s=T03s; q.T04=T04;
 q.T1=T1; q.T4=T4;
 q.p00=p00; q.p01=p01; q.p03=p03; q.p04=p04; q.p4=p4;

@@ -1,5 +1,5 @@
 %% ---- FUNCTION: LOSS EVALUATION ---- %%
-function [g,L] = BladeLoss(d,g,a,q,L)
+function [g,L] = BladeLoss(d,g,a,q,L,k)
 
 %%REDOO intro
 % Function calculates velocities and angles for conventional or
@@ -134,7 +134,7 @@ for rr=1:2
   mm = (g.gap * d.Cc / hb) * ((tand(ang1(rr)))^2 - (tand(ang2(rr)))^2)^0.5; % Yoon 5 %(g * Cc / hn) * (abs((1/cosd(ang2))^2 - (tand(ang1))^2 ))^0.5 % # mm = (g_s * Cc / H_b) * np.sqrt( (1/np.cos(a2))**2 - (np.tan(a2))**2 ) 
   tip(rr) =  2 * mm * (1 - (tand(ang1(rr)) * sind(ang2(rr)) * cosd(ang2(rr))) ) * (0.5 * vel2(rr)^2 / Temp1(rr)); %
   % #tip =  mm * V2**2 * abs( 1 - (np.tan(a1) * np.sin(a2) * np.cos(a2)) ) / T #valid for compressible Yoon 6
- 
+
   % Endwall Loss - comes from cd*V^3 argument but need to think about some more - important mechanisms I think
   endwallfun = @(x) (((vLE_SS + (vTE - vLE_SS)*x/Cx)).^3 + ((vLE_PS + (vTE - vLE_PS)*x/Cx)).^3)/2;
   % Hub  
@@ -148,7 +148,10 @@ end
 % Sum up losses
 prof = prof1 + prof2;
 Lrcalc = prof(1) + base(1) + tip(1) + endwall(1); %1st row
-Lscalc = prof(2) + base(2) + tip(2) + endwall(2); %2nd row
+Lscalc = prof(2) + base(2) + 2*(1-k)*tip(2) + endwall(2); %2nd row, note no gap for stator - change this to toggle for CRDF
+
+% Calculating efficiency from entropy
+L.eta_s = q.cp*(q.T03s - q.T01) / ( q.cp*(q.T03 - q.T01) + q.T01*(Lrcalc+Lscalc));
 
 %% Change in losses for while loop, Repack structures
 L.deltaLr = (Lrcalc - L.Lr)/L.Lr;
@@ -156,7 +159,7 @@ L.deltaLs = (Lscalc - L.Ls)/L.Ls;
 L.Lr = Lrcalc;
 L.Ls = Lscalc;
 L.rLoss.prof=prof(1); L.rLoss.base=base(1); L.rLoss.tip=tip(1); L.rLoss.endwall=endwall(1);
-L.sLoss.prof=prof(2); L.sLoss.base=base(2); L.sLoss.tip=tip(2); L.sLoss.endwall=endwall(2);
+L.sLoss.prof=prof(2); L.sLoss.base=base(2); L.sLoss.tip=2*(1-k)*tip(2); L.sLoss.endwall=endwall(2);
 L.rLoss.BLT_SS=BLT_SS(1); L.rLoss.BLT_PS=BLT_PS(1); L.sLoss.BLT_SS=BLT_SS(2); L.sLoss.BLT_PS=BLT_SS(2); 
 
 g.c=C; g.s=s; g.Nb=Nb; %Return Re??

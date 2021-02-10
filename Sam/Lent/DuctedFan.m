@@ -99,6 +99,12 @@ N.Ns = init; % Blade count row 2
 N.Frs = init; % Propulsive efficiency
 N.psis = init;
 N.FOMs = init; % Figure of Merit
+N.Ltot = init;
+N.L_eta = init;
+N.profL = init;
+N.baseL = init;
+N.tipL = init;
+N.endwallL = init;
 C=N;
 
 %% Begin loop
@@ -124,7 +130,7 @@ while abs(L.deltaLr) > 0.001/100 && abs(L.deltaLs) > 0.001/100
 k=1; %(NRF), k = % of blade speed in first row
 [d,g,a,q] = VelTriangles(d,g,q,L,k);
 % Evaluate analytical velocity profiles and loss for each blade row, plus calculate shroud clearance and endwall losses
-[g,L] = BladeLoss(d,g,a,q,L); % Return Re?
+[g,L] = BladeLoss(d,g,a,q,L,k); % Return Re?
 end
 NRF.d=d; NRF.g=g; NRF.a=a; NRF.q=q; NRF.L=L;
 
@@ -142,6 +148,13 @@ if ~isnan(g.Nb(:))
     N.Frs(pp,ss) = d.Fr; % Propulsive efficiency
     N.psis(pp,ss) = d.psi;
     N.FOMs(pp,ss) = d.Mf;
+    Ltot = L.Lr + L.Ls; 
+    N.Ltot(pp,ss) = Ltot;
+    N.L_eta(pp,ss) = L.eta_s;
+    N.profL(pp,ss) = (L.rLoss.prof + L.sLoss.prof)/Ltot;
+    N.baseL(pp,ss) = (L.rLoss.base + L.sLoss.base)/Ltot;
+    N.tipL(pp,ss) = (L.rLoss.tip + L.sLoss.tip)/Ltot;
+    N.endwallL(pp,ss) = (L.rLoss.endwall + L.sLoss.endwall)/Ltot;
 end
 %% Iteation loop for CRF losses
 
@@ -157,7 +170,7 @@ while abs(L.deltaLr) > 0.001/100 && abs(L.deltaLs) > 0.001/100
 k=0.5; %(CRF), k = % of blade speed in first row
 [d,g,a,q] = VelTriangles(d,g,q,L,k);
 % Evaluate analytical velocity profiles and loss for each blade row, plus calculate shroud clearance and endwall losses
-[g,L] = BladeLoss(d,g,a,q,L); % Return Re?
+[g,L] = BladeLoss(d,g,a,q,L,k); % Return Re?
 end
 CRF.d=d; CRF.g=g; CRF.a=a; CRF.q=q; CRF.L=L;
 
@@ -175,6 +188,13 @@ if ~isnan(g.Nb(:))
     C.Frs(pp,ss) = d.Fr; % Propulsive efficiency
     C.psis(pp,ss) = d.psi;
     C.FOMs(pp,ss) = d.Mf;
+    Ltot = L.Lr + L.Ls; 
+    C.Ltot(pp,ss) = Ltot;
+    C.L_eta(pp,ss) = L.eta_s;
+    C.profL(pp,ss) = (L.rLoss.prof + L.sLoss.prof)/Ltot;
+    C.baseL(pp,ss) = (L.rLoss.base + L.sLoss.base)/Ltot;
+    C.tipL(pp,ss) = (L.rLoss.tip + L.sLoss.tip)/Ltot;
+    C.endwallL(pp,ss) = (L.rLoss.endwall + L.sLoss.endwall)/Ltot;
 end
 
 % Store outputs in structures
@@ -201,11 +221,13 @@ display(['phi = ' num2str(d.phi) '  sigma = ' num2str(d.sigma) '   Time = ' num2
 end
 
 %% NRF Plotting
-Nb_lim = [0 20]; % Sets limit of colormap for blade numbers
+Nb_lim = [0 25]; % Sets limit of colormap for blade numbers
+L_lim = [0 0.5]; % Sets loss limits between 0 and 1
+Ltot_lim = [min(min(N.Ltot(:)), min(C.Ltot(:))) max(max(N.Ltot(:)), max(C.Ltot(:)))];
 phis=N.phis; sigmas=N.sigmas; psis=N.psis;
 
 figure(1);set(gcf, 'color', 'w'); grid off; box on;
-set(gcf,'Position',[20 50 1300 600]);
+set(gcf,'Position',[20 50 1300 700]);
 subplot(2,4,1)
 contourf(phis,sigmas,N.etas,25, 'edgecolor','none'); colorbar
 title("Fan efficiency \eta_a"); xlabel("\phi"); ylabel("\sigma");
@@ -232,8 +254,30 @@ subplot(2,4,8)
 contourf(phis,sigmas,N.psis,25, 'edgecolor','none'); colorbar
 title("Psi \psi"); xlabel("\phi"); ylabel("\sigma");
 
-
 figure(2);set(gcf, 'color', 'w'); grid off; box on;
+set(gcf,'Position',[20 50 1300 700]);
+subplot(2,3,1)
+contourf(phis,sigmas,N.profL,25, 'edgecolor','none'); colorbar; caxis(L_lim);
+title("Fractional profile loss"); xlabel("\phi"); ylabel("\sigma");
+subplot(2,3,2)
+contourf(phis,sigmas,N.baseL,25, 'edgecolor','none'); colorbar; caxis(L_lim);
+title("Fractional base pressure loss"); xlabel("\phi"); ylabel("\sigma");
+subplot(2,3,4)
+contourf(phis,sigmas,N.tipL,25, 'edgecolor','none'); colorbar; caxis(L_lim);
+title("Fractional tip loss"); xlabel("\phi"); ylabel("\sigma");
+subplot(2,3,5)
+contourf(phis,sigmas,N.endwallL,25, 'edgecolor','none'); colorbar; caxis(L_lim);
+title("Fractional endwall loss"); xlabel("\phi"); ylabel("\sigma");
+subplot(2,3,3)
+contourf(phis,sigmas,N.Ltot,25, 'edgecolor','none'); colorbar; caxis(Ltot_lim);
+title("NRF Loss"); xlabel("\phi"); ylabel("\sigma");
+subplot(2,3,6)
+contourf(phis,sigmas,N.L_eta,25, 'edgecolor','none'); colorbar
+title("Entropy efficiency"); xlabel("\phi"); ylabel("\sigma");
+
+
+
+figure(3);set(gcf, 'color', 'w'); grid off; box on;
 set(gcf,'Position',[20 50 1000 600]);
 subplot(2,3,1)
 contourf(phis,psis,N.etas,25, 'edgecolor','none'); colorbar
@@ -265,8 +309,8 @@ title("Stator blades"); xlabel("\phi"); ylabel("\psi");
 
 phis=C.phis; sigmas=C.sigmas; psis=C.psis;
 
-figure(3);set(gcf, 'color', 'w'); grid off; box on;
-set(gcf,'Position',[20 50 1300 600]);
+figure(4);set(gcf, 'color', 'w'); grid off; box on;
+set(gcf,'Position',[20 50 1300 700]);
 subplot(2,4,1)
 contourf(phis,sigmas,C.etas,25, 'edgecolor','none'); colorbar
 title("Fan efficiency \eta_a"); xlabel("\phi"); ylabel("\sigma");
@@ -293,8 +337,29 @@ subplot(2,4,8)
 contourf(phis,sigmas,C.psis,25, 'edgecolor','none'); colorbar
 title("Psi \psi"); xlabel("\phi"); ylabel("\sigma");
 
+figure(5);set(gcf, 'color', 'w'); grid off; box on;
+set(gcf,'Position',[20 50 1300 700]);
+subplot(2,3,1)
+contourf(phis,sigmas,C.profL,25, 'edgecolor','none'); colorbar; caxis(L_lim);
+title("Fractional profile loss"); xlabel("\phi"); ylabel("\sigma");
+subplot(2,3,2)
+contourf(phis,sigmas,C.baseL,25, 'edgecolor','none'); colorbar; caxis(L_lim);
+title("Fractional base pressure loss"); xlabel("\phi"); ylabel("\sigma");
+subplot(2,3,4)
+contourf(phis,sigmas,C.tipL,25, 'edgecolor','none'); colorbar; caxis(L_lim);
+title("Fractional tip loss"); xlabel("\phi"); ylabel("\sigma");
+subplot(2,3,5)
+contourf(phis,sigmas,C.endwallL,25, 'edgecolor','none'); colorbar; caxis(L_lim);
+title("Fractional endwall loss"); xlabel("\phi"); ylabel("\sigma");
+subplot(2,3,3)
+contourf(phis,sigmas,C.Ltot,25, 'edgecolor','none'); colorbar; caxis(Ltot_lim);
+title("CRF Loss"); xlabel("\phi"); ylabel("\sigma");
+subplot(2,3,6)
+contourf(phis,sigmas,C.L_eta,25, 'edgecolor','none'); colorbar
+title("Entropy efficiency"); xlabel("\phi"); ylabel("\sigma");
 
-figure(4);set(gcf, 'color', 'w'); grid off; box on;
+
+figure(6);set(gcf, 'color', 'w'); grid off; box on;
 set(gcf,'Position',[20 50 1000 600]);
 subplot(2,3,1)
 contourf(phis,psis,C.etas,25, 'edgecolor','none'); colorbar

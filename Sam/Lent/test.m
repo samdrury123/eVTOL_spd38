@@ -13,18 +13,18 @@ end
 alt = 1000;
 atm = Altitude(alt); % At sea level
 
-a([4 5]) = struct();
-p=linspace(1,4,4);
-q=linspace(0.1,0.4,4);
-for i=1:4
-    for j=1:5
-        a(i,j).x.c = i*j;
-        a(i,j).x.d = i*i;
-        a(i,j).y = i;
-    end
-end
-figure; hold on;
-contourf(p,q,a.x); colorbar;
+% a([4 5]) = struct();
+% p=linspace(1,4,4);
+% q=linspace(0.1,0.4,4);
+% for i=1:4
+%     for j=1:5
+%         a(i,j).x.c = i*j;
+%         a(i,j).x.d = i*i;
+%         a(i,j).y = i;
+%     end
+% end
+% figure; hold on;
+% contourf(p,q,a.x); colorbar;
 
 % Nr=31;
 % r1 = linspace(20,60,Nr)';
@@ -46,7 +46,30 @@ contourf(p,q,a.x); colorbar;
 
 x=0.1:0.1:1;
 y=x.^2;
-z=2*x
+z=2*x;
 z2=2.*x;
 trial = [0.35,0.45];
 Y = interp1(x,y,trial);
+
+NRF.d.a.phi=0.8;
+NRF.d.a.sigma=1.1;
+NRF.g.rh=0.5;
+CRF.d.phi=0.9;
+CRF.d.sigma=1.2;
+CRF.g.rc=0.7;
+a=1;
+st=[NRF CRF];
+
+if ~isnan(a)
+    for rr=1:2
+        b(rr)=1;
+    end
+end
+
+
+a=[1 2 3 4 5 6; 7 8 9 10 11 12];
+sum(a(2:5,2))
+
+
+
+

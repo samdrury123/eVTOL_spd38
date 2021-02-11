@@ -45,7 +45,7 @@ vel1t = [a.vth(imid,1,2) a.vth(imid,2,3)];
 vel2t = [a.vth(imid,2,2) a.vth(imid,3,3)];
 vel1x = [a.vx(imid,1,1) a.vx(imid,2,1)]; 
 %vel2x = [a.vx2 a.vx3];
-Temp1 = [q.T1 q.T2];
+Temp1 = [q.T1 q.T2]; % CHANGE TO STAG FOR BASE
 rho = [q.ro1 q.ro2];
 
 Nb =        [0,0];

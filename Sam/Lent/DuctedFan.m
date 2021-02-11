@@ -22,8 +22,9 @@ bluebear = 0;
 % DONELook at removing CRDF flag
 % DONE Change tmax, tTe to be percentages of chord
 % Improve variable naming for velocities - make location an index
-% Add loss charts
-% Rename rloss, sloss to b1, b2 for contra comaptability
+% DONE Add loss charts
+% Rename rloss, sloss to b1, b2 
+% Rename Nr, Ns to N1, N2
 % ERROR HANDLING
 % Merge VelTriangles and BladeLoss
 % Merge a and q structs?
@@ -63,7 +64,7 @@ else % Whittle eVTOL
     g.htrat = 1/3; % Hub-to-tip ratio
     g.AR = 1.8; % Blade aspect ratio
     g.n = 0.5; % Exponent for vortex design of conventional fan, n=1 is free, n=-1 is forced
-    g.tTE = 0.025; % Trailing edge thickness, % of chord (ie 2.5%)
+    g.tTE = 0.05; % Trailing edge thickness, % of chord (ie 5%, equal to around 1mm)
     g.tmax = 0.15; % Max blade thickness, % of chord
     g.gap = 0.0005; % Shroud clearance in m %% CHANGE THIS TO % OF CHORD??
 end
@@ -87,7 +88,7 @@ design([ size(philist,2) size(sigmalist,2) ]) = struct();
 % NRFdesign = design;
 % CRFdesign = design;
 
-% Filling with NaNs ensures duff data doesn't skew contour plots
+% Arrays for plotting - filling with NaNs ensures duff data doesn't skew contour plots
 init = NaN.*ones(size(philist,2), size(sigmalist,2)); 
 N.phis = init;
 N.sigmas = init;
@@ -105,6 +106,7 @@ N.profL = init;
 N.baseL = init;
 N.tipL = init;
 N.endwallL = init;
+N.DH1 = init; N.DH2 = init;
 C=N;
 
 %% Begin loop
@@ -128,9 +130,9 @@ while abs(L.deltaLr) > 0.001/100 && abs(L.deltaLs) > 0.001/100
 [d,g,q] = CVanalysis_comp(d,g,q,L);
 % Meanline velocity triangles
 k=1; %(NRF), k = % of blade speed in first row
-[d,g,a,q] = VelTriangles(d,g,q,L,k);
+[d,g,a,q,L] = VelTriangles(d,g,q,L,k);
 % Evaluate analytical velocity profiles and loss for each blade row, plus calculate shroud clearance and endwall losses
-[g,L] = BladeLoss(d,g,a,q,L,k); % Return Re?
+% [g,L] = BladeLoss(d,g,a,q,L,k); % Return Re?
 end
 NRF.d=d; NRF.g=g; NRF.a=a; NRF.q=q; NRF.L=L;
 
@@ -155,6 +157,8 @@ if ~isnan(g.Nb(:))
     N.baseL(pp,ss) = (L.rLoss.base + L.sLoss.base)/Ltot;
     N.tipL(pp,ss) = (L.rLoss.tip + L.sLoss.tip)/Ltot;
     N.endwallL(pp,ss) = (L.rLoss.endwall + L.sLoss.endwall)/Ltot;
+    N.DH1(pp,ss) = d.DH(1);
+    N.DH2(pp,ss) = d.DH(2);
 end
 %% Iteation loop for CRF losses
 
@@ -168,39 +172,42 @@ while abs(L.deltaLr) > 0.001/100 && abs(L.deltaLs) > 0.001/100
 [d,g,q] = CVanalysis_comp(d,g,q,L);
 % Meanline velocity triangles
 k=0.5; %(CRF), k = % of blade speed in first row
-[d,g,a,q] = VelTriangles(d,g,q,L,k);
+[d,g,a,q,L] = VelTriangles(d,g,q,L,k);
 % Evaluate analytical velocity profiles and loss for each blade row, plus calculate shroud clearance and endwall losses
-[g,L] = BladeLoss(d,g,a,q,L,k); % Return Re?
+% [g,L] = BladeLoss(d,g,a,q,L,k); % Return Re?
 end
 CRF.d=d; CRF.g=g; CRF.a=a; CRF.q=q; CRF.L=L;
+
 
 % Finished loss loop so everything defined. The rest is gathering together
 % outputs
 % Hacking together arrays to plot
-if ~isnan(g.Nb(:))
-    C.phis(pp,ss) = d.phi;
-    C.sigmas(pp,ss) = d.sigma;
-    C.etas(pp,ss) = d.eta;  % Fan efficiency 
-    C.Rs(pp,ss) = d.Reaction; % Reaction
-    C.rpms(pp,ss) = d.rpm1; % rpm
-    C.Nr(pp,ss) = g.Nb(1); % Blade count row 1
-    C.Ns(pp,ss) = g.Nb(2); % Blade count row 2
-    C.Frs(pp,ss) = d.Fr; % Propulsive efficiency
-    C.psis(pp,ss) = d.psi;
-    C.FOMs(pp,ss) = d.Mf;
-    Ltot = L.Lr + L.Ls; 
-    C.Ltot(pp,ss) = Ltot;
-    C.L_eta(pp,ss) = L.eta_s;
-    C.profL(pp,ss) = (L.rLoss.prof + L.sLoss.prof)/Ltot;
-    C.baseL(pp,ss) = (L.rLoss.base + L.sLoss.base)/Ltot;
-    C.tipL(pp,ss) = (L.rLoss.tip + L.sLoss.tip)/Ltot;
-    C.endwallL(pp,ss) = (L.rLoss.endwall + L.sLoss.endwall)/Ltot;
+for bb=1:2
+    if ~isnan(g.Nb(:))
+C.phis(pp,ss) = d.phi;
+C.sigmas(pp,ss) = d.sigma;
+C.etas(pp,ss) = d.eta;  % Fan efficiency 
+C.Rs(pp,ss) = d.Reaction; % Reaction
+C.rpms(pp,ss) = d.rpm1; % rpm
+C.Nr(pp,ss) = g.Nb(1); % Blade count row 1
+C.Ns(pp,ss) = g.Nb(2); % Blade count row 2
+C.Frs(pp,ss) = d.Fr; % Propulsive efficiency
+C.psis(pp,ss) = d.psi;
+C.FOMs(pp,ss) = d.Mf;
+Ltot = L.Lr + L.Ls; 
+C.Ltot(pp,ss) = Ltot;
+C.L_eta(pp,ss) = L.eta_s;
+C.profL(pp,ss) = (L.rLoss.prof + L.sLoss.prof)/Ltot;
+C.baseL(pp,ss) = (L.rLoss.base + L.sLoss.base)/Ltot;
+C.tipL(pp,ss) = (L.rLoss.tip + L.sLoss.tip)/Ltot;
+C.endwallL(pp,ss) = (L.rLoss.endwall + L.sLoss.endwall)/Ltot;
+    end
 end
 
-% Store outputs in structures
+%% Store outputs in structures
 design(pp,ss).phisig = [d.phi, d.sigma];
-design(pp,ss).NRF = NRF;
-design(pp,ss).CRF = CRF;
+design(pp,ss).NRF = NRF; design(pp,ss).NRF.phisig = [d.phi, d.sigma];
+design(pp,ss).CRF = CRF; design(pp,ss).CRF.phisig = [d.phi, d.sigma];
 
 % % Inlet streamtube capture 
 % % Currently assumes isentropic inlet duct
@@ -221,169 +228,11 @@ display(['phi = ' num2str(d.phi) '  sigma = ' num2str(d.sigma) '   Time = ' num2
 end
 
 %% NRF Plotting
-Nb_lim = [0 25]; % Sets limit of colormap for blade numbers
-L_lim = [0 0.5]; % Sets loss limits between 0 and 1
-Ltot_lim = [min(min(N.Ltot(:)), min(C.Ltot(:))) max(max(N.Ltot(:)), max(C.Ltot(:)))];
-phis=N.phis; sigmas=N.sigmas; psis=N.psis;
+lims.Nb = [0 25]; % Sets limit of colormap for blade numbers
+lims.L = [0 0.5]; % Sets loss limits between 0 and 1
+lims.Ltot = [min(min(N.Ltot(:)), min(C.Ltot(:))) max(max(N.Ltot(:)), max(C.Ltot(:)))]; % Normalises loss graphs to show improvement
 
-figure(1);set(gcf, 'color', 'w'); grid off; box on;
-set(gcf,'Position',[20 50 1300 700]);
-subplot(2,4,1)
-contourf(phis,sigmas,N.etas,25, 'edgecolor','none'); colorbar
-title("Fan efficiency \eta_a"); xlabel("\phi"); ylabel("\sigma");
-subplot(2,4,2)
-contourf(phis,sigmas,N.Frs,25, 'edgecolor','none'); colorbar
-title("Propulsive efficiency \eta_p"); xlabel("\phi"); ylabel("\sigma");
-subplot(2,4,3)
-contourf(phis,sigmas,N.etas.*N.Frs,25, 'edgecolor','none'); colorbar
-title("Overall efficiency \eta_{ov}"); xlabel("\phi"); ylabel("\sigma");
-subplot(2,4,4)
-contourf(phis,sigmas,N.FOMs,25, 'edgecolor','none'); colorbar
-title("Figure of Merit"); xlabel("\phi"); ylabel("\sigma");
-subplot(2,4,5)
-contourf(phis,sigmas,N.rpms,25, 'edgecolor','none'); colorbar
-title("RPM"); xlabel("\phi"); ylabel("\sigma");
-subplot(2,4,6)
-contourf(phis,sigmas,N.Nr,25, 'edgecolor','none'); colorbar; caxis(Nb_lim);
-title("Rotor blades"); xlabel("\phi"); ylabel("\sigma");
-% text(1.1,1.3, ['CRDF = ' num2str(CRDF_flag)],'color','b')
-subplot(2,4,7)
-contourf(phis,sigmas,N.Ns,25, 'edgecolor','none'); colorbar; caxis(Nb_lim);
-title("Stator blades"); xlabel("\phi"); ylabel("\sigma");
-subplot(2,4,8)
-contourf(phis,sigmas,N.psis,25, 'edgecolor','none'); colorbar
-title("Psi \psi"); xlabel("\phi"); ylabel("\sigma");
-
-figure(2);set(gcf, 'color', 'w'); grid off; box on;
-set(gcf,'Position',[20 50 1300 700]);
-subplot(2,3,1)
-contourf(phis,sigmas,N.profL,25, 'edgecolor','none'); colorbar; caxis(L_lim);
-title("Fractional profile loss"); xlabel("\phi"); ylabel("\sigma");
-subplot(2,3,2)
-contourf(phis,sigmas,N.baseL,25, 'edgecolor','none'); colorbar; caxis(L_lim);
-title("Fractional base pressure loss"); xlabel("\phi"); ylabel("\sigma");
-subplot(2,3,4)
-contourf(phis,sigmas,N.tipL,25, 'edgecolor','none'); colorbar; caxis(L_lim);
-title("Fractional tip loss"); xlabel("\phi"); ylabel("\sigma");
-subplot(2,3,5)
-contourf(phis,sigmas,N.endwallL,25, 'edgecolor','none'); colorbar; caxis(L_lim);
-title("Fractional endwall loss"); xlabel("\phi"); ylabel("\sigma");
-subplot(2,3,3)
-contourf(phis,sigmas,N.Ltot,25, 'edgecolor','none'); colorbar; caxis(Ltot_lim);
-title("NRF Loss"); xlabel("\phi"); ylabel("\sigma");
-subplot(2,3,6)
-contourf(phis,sigmas,N.L_eta,25, 'edgecolor','none'); colorbar
-title("Entropy efficiency"); xlabel("\phi"); ylabel("\sigma");
-
-
-
-figure(3);set(gcf, 'color', 'w'); grid off; box on;
-set(gcf,'Position',[20 50 1000 600]);
-subplot(2,3,1)
-contourf(phis,psis,N.etas,25, 'edgecolor','none'); colorbar
-title("Fan efficiency \eta_a"); xlabel("\phi"); ylabel("\psi");
-subplot(2,3,2)
-contourf(phis,psis,N.Frs,25, 'edgecolor','none'); colorbar
-title("Propulsive efficiency \eta_p"); xlabel("\phi"); ylabel("\psi");
-if d.u0 == 0
-    subplot(2,3,3)
-    contourf(phis,psis,N.FOMs,25, 'edgecolor','none'); colorbar
-    title("Figure of Merit"); xlabel("\phi"); ylabel("\psi");
-else
-    subplot(2,3,3)
-    contourf(phis,psis,N.etas.*N.Frs,25, 'edgecolor','none'); colorbar
-    title("Overall efficiency \eta_{ov}"); xlabel("\phi"); ylabel("\psi");
-end
-subplot(2,3,4)
-contourf(phis,psis,N.rpms,25, 'edgecolor','none'); colorbar
-title("RPM"); xlabel("\phi"); ylabel("\psi");
-% text(1.1,0.8, ['CRDF = ' num2str(CRDF_flag)],'color','b')
-subplot(2,3,5)
-contourf(phis,psis,N.Nr,25, 'edgecolor','none'); colorbar; caxis(Nb_lim);
-title("Rotor blades"); xlabel("\phi"); ylabel("\psi");
-subplot(2,3,6)
-contourf(phis,psis,N.Ns,25, 'edgecolor','none'); colorbar; caxis(Nb_lim);
-title("Stator blades"); xlabel("\phi"); ylabel("\psi");
-
-%% CRF plotting
-
-phis=C.phis; sigmas=C.sigmas; psis=C.psis;
-
-figure(4);set(gcf, 'color', 'w'); grid off; box on;
-set(gcf,'Position',[20 50 1300 700]);
-subplot(2,4,1)
-contourf(phis,sigmas,C.etas,25, 'edgecolor','none'); colorbar
-title("Fan efficiency \eta_a"); xlabel("\phi"); ylabel("\sigma");
-subplot(2,4,2)
-contourf(phis,sigmas,C.Frs,25, 'edgecolor','none'); colorbar
-title("Propulsive efficiency \eta_p"); xlabel("\phi"); ylabel("\sigma");
-subplot(2,4,3)
-contourf(phis,sigmas,C.etas.*C.Frs,25, 'edgecolor','none'); colorbar
-title("Overall efficiency \eta_{ov}"); xlabel("\phi"); ylabel("\sigma");
-subplot(2,4,4)
-contourf(phis,sigmas,C.FOMs,25, 'edgecolor','none'); colorbar
-title("Figure of Merit"); xlabel("\phi"); ylabel("\sigma");
-subplot(2,4,5)
-contourf(phis,sigmas,C.rpms,25, 'edgecolor','none'); colorbar
-title("RPM"); xlabel("\phi"); ylabel("\sigma");
-subplot(2,4,6)
-contourf(phis,sigmas,C.Nr,25, 'edgecolor','none'); colorbar; caxis(Nb_lim);
-title("Rotor blades"); xlabel("\phi"); ylabel("\sigma");
-% text(1.1,1.3, ['CRDF = ' num2str(CRDF_flag)],'color','b')
-subplot(2,4,7)
-contourf(phis,sigmas,C.Ns,25, 'edgecolor','none'); colorbar; caxis(Nb_lim);
-title("Stator blades"); xlabel("\phi"); ylabel("\sigma");
-subplot(2,4,8)
-contourf(phis,sigmas,C.psis,25, 'edgecolor','none'); colorbar
-title("Psi \psi"); xlabel("\phi"); ylabel("\sigma");
-
-figure(5);set(gcf, 'color', 'w'); grid off; box on;
-set(gcf,'Position',[20 50 1300 700]);
-subplot(2,3,1)
-contourf(phis,sigmas,C.profL,25, 'edgecolor','none'); colorbar; caxis(L_lim);
-title("Fractional profile loss"); xlabel("\phi"); ylabel("\sigma");
-subplot(2,3,2)
-contourf(phis,sigmas,C.baseL,25, 'edgecolor','none'); colorbar; caxis(L_lim);
-title("Fractional base pressure loss"); xlabel("\phi"); ylabel("\sigma");
-subplot(2,3,4)
-contourf(phis,sigmas,C.tipL,25, 'edgecolor','none'); colorbar; caxis(L_lim);
-title("Fractional tip loss"); xlabel("\phi"); ylabel("\sigma");
-subplot(2,3,5)
-contourf(phis,sigmas,C.endwallL,25, 'edgecolor','none'); colorbar; caxis(L_lim);
-title("Fractional endwall loss"); xlabel("\phi"); ylabel("\sigma");
-subplot(2,3,3)
-contourf(phis,sigmas,C.Ltot,25, 'edgecolor','none'); colorbar; caxis(Ltot_lim);
-title("CRF Loss"); xlabel("\phi"); ylabel("\sigma");
-subplot(2,3,6)
-contourf(phis,sigmas,C.L_eta,25, 'edgecolor','none'); colorbar
-title("Entropy efficiency"); xlabel("\phi"); ylabel("\sigma");
-
-
-figure(6);set(gcf, 'color', 'w'); grid off; box on;
-set(gcf,'Position',[20 50 1000 600]);
-subplot(2,3,1)
-contourf(phis,psis,C.etas,25, 'edgecolor','none'); colorbar
-title("Fan efficiency \eta_a"); xlabel("\phi"); ylabel("\psi");
-subplot(2,3,2)
-contourf(phis,psis,C.Frs,25, 'edgecolor','none'); colorbar
-title("Propulsive efficiency \eta_p"); xlabel("\phi"); ylabel("\psi");
-if d.u0 == 0
-    subplot(2,3,3)
-    contourf(phis,psis,C.FOMs,25, 'edgecolor','none'); colorbar
-    title("Figure of Merit"); xlabel("\phi"); ylabel("\psi");
-else
-    subplot(2,3,3)
-    contourf(phis,psis,C.etas.*C.Frs,25, 'edgecolor','none'); colorbar
-    title("Overall efficiency \eta_{ov}"); xlabel("\phi"); ylabel("\psi");
-end
-subplot(2,3,4)
-contourf(phis,psis,C.rpms,25, 'edgecolor','none'); colorbar
-title("RPM"); xlabel("\phi"); ylabel("\psi");
-% text(1.1,0.8, ['CRDF = ' num2str(CRDF_flag)],'color','b')
-subplot(2,3,5)
-contourf(phis,psis,C.Nr,25, 'edgecolor','none'); colorbar; caxis(Nb_lim);
-title("Rotor blades"); xlabel("\phi"); ylabel("\psi");
-subplot(2,3,6)
-contourf(phis,psis,C.Ns,25, 'edgecolor','none'); colorbar; caxis(Nb_lim);
-title("Stator blades"); xlabel("\phi"); ylabel("\psi");
+% Need to improve de Haller plotting
+PlotCharts(N,lims);
+% PlotCharts(C,lims);
 

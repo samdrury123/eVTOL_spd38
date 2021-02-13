@@ -15,6 +15,7 @@ bluebear = 0;
 % ERROR HANDLING
 % Allow NRF and CRF structs
 % Add efficiencies - two motors has greater inefficiencies 
+% Make trailing edge thickness absolute
 
 %% To be added in this branch:
 % DONE Vortex exponent
@@ -27,9 +28,9 @@ bluebear = 0;
 % DONE Rename Nr, Ns to N1, N2
 % ERROR HANDLING
 % DONE Merge VelTriangles and BladeLoss
-% Merge a and q structs?
+% (not needed) Merge a and q structs?
 % DONE Tidy up names for functions
-% Vary T,p,rho spanwise
+% DONE Vary T,p,rho spanwise
 
 %% Input variables
 
@@ -48,7 +49,7 @@ if bluebear == 1
     g.htrat = 0.3; % Hub-to-tip ratio
     g.AR = 4; % Blade aspect ratio
     g.n = 0.5; % Exponent for vortex design of conventional fan, n=1 is free, n=-1 is forced
-    g.tTE = 0.025; % Trailing edge thickness, % of chord (ie 2.5%)
+    g.tTE = 2/1000; % Trailing edge thickness in m
     g.tmax = 0.163; % Max blade thickness, % of chord
     g.gap = 0.001; % Shroud clearance in m
 else % Whittle eVTOL
@@ -66,7 +67,7 @@ else % Whittle eVTOL
     g.htrat = 1/3; % Hub-to-tip ratio
     g.AR = 1.8; % Blade aspect ratio
     g.n = 0.5; % Exponent for vortex design of conventional fan, n=1 is free, n=-1 is forced
-    g.tTE = 0.05; % Trailing edge thickness, % of chord (ie 5%, equal to around 1mm)
+    g.tTE = 1/1000; % Trailing edge thickness in m
     g.tmax = 0.15; % Max blade thickness, % of chord
     g.gap = 0.0005; % Shroud clearance in m %% CHANGE THIS TO % OF CHORD??
 end
@@ -109,7 +110,8 @@ N.baseL = init;
 N.tipL = init;
 N.endwallL = init;
 N.DH1 = init; N.DH2 = init;
-C=N;
+N.name = 'NRF';
+C=N; C.name = 'CRF';
 
 %% Begin loop
 
@@ -145,7 +147,7 @@ if ~isnan(g.Nb(:))
     N.phis(pp,ss) = d.phi;
     N.sigmas(pp,ss) = d.sigma;
     N.etas(pp,ss) = d.eta;  % Fan efficiency 
-    N.Rs(pp,ss) = d.Reaction; % Reaction
+%     N.Rs(pp,ss) = d.Reaction; % Reaction
     N.rpms(pp,ss) = d.rpm1; % rpm
     N.N1(pp,ss) = g.Nb(1); % Blade count row 1
     N.N2(pp,ss) = g.Nb(2); % Blade count row 2
@@ -189,7 +191,7 @@ if ~isnan(g.Nb(:))
     C.phis(pp,ss) = d.phi;
     C.sigmas(pp,ss) = d.sigma;
     C.etas(pp,ss) = d.eta;  % Fan efficiency 
-    C.Rs(pp,ss) = d.Reaction; % Reaction
+%     C.Rs(pp,ss) = d.Reaction; % Reaction
     C.rpms(pp,ss) = d.rpm1; % rpm
     C.N1(pp,ss) = g.Nb(1); % Blade count row 1
     C.N2(pp,ss) = g.Nb(2); % Blade count row 2
@@ -203,6 +205,8 @@ if ~isnan(g.Nb(:))
     C.baseL(pp,ss) = (L.Loss1.base + L.Loss2.base)/Ltot;
     C.tipL(pp,ss) = (L.Loss1.tip + L.Loss2.tip)/Ltot;
     C.endwallL(pp,ss) = (L.Loss1.endwall + L.Loss2.endwall)/Ltot;
+    C.DH1(pp,ss) = d.DH(1);
+    C.DH2(pp,ss) = d.DH(2);
 end
 
 %% Store outputs in structures
@@ -240,7 +244,7 @@ lims.Ltot = [min(min(N.Ltot(:)), min(C.Ltot(:))) max(max(N.Ltot(:)), max(C.Ltot(
 
 % Need to improve de Haller plotting
 PlotCharts(N,lims);
-% PlotCharts(C,lims);
+PlotCharts(C,lims);
 
 % PlotVels(blah)
 % velocity triangles, profiles (hub tip mean)

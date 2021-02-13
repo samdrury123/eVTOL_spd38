@@ -73,4 +73,4 @@ sum(a(2:5,2))
 c=[1 2 3 4 5]/10;
 endwallfun = @(x,r) x.^2 + c(r);
 q = integral(@(x) endwallfun(x,5),0,2)
-
+cas(1:5) = 4

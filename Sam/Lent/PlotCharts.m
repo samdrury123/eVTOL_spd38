@@ -70,7 +70,12 @@ contourf(phis,sigmas,D.endwallL,25, 'edgecolor','none'); colorbar; caxis(lim.L);
 title("Fractional endwall loss"); xlabel("\phi"); ylabel("\sigma");
 subplot(2,3,3)
 contourf(phis,sigmas,D.Ltot,25, 'edgecolor','none'); colorbar; caxis(lim.Ltot);
-title("NRF Loss"); xlabel("\phi"); ylabel("\sigma");
+if strcmp(D.name,'NRF')
+    title("NRF Total Loss");
+else
+    title("CRF Total Loss");
+end
+xlabel("\phi"); ylabel("\sigma");
 subplot(2,3,6)
 contourf(phis,sigmas,D.L_eta,25, 'edgecolor','none'); colorbar
 title("Entropy efficiency"); xlabel("\phi"); ylabel("\sigma");

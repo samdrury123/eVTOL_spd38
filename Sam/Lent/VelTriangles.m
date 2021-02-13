@@ -1,7 +1,6 @@
 %% ---- FUNCTION: VELOCITY TRIANGLES ---- %%
 function [d,g,a,q,L] = VelTriangles(d,g,q,L,k)
 
-%%REDOO intro
 % Function calculates velocities and angles for conventional or
 % counter-rotating fan, as well as the losses in each blade row
 % Currently works with alpha1=alpha3=0, single design point
@@ -153,17 +152,25 @@ while abs(deltavx2) > 0.0001/100 %0.00001
 %     end
 %     deltavx2 = mean(vx(:,2,1)-vx2calc)/mean(vx(:,2,1));
 end
-T02 = T2 + 0.5*v(imid,2,1)^2/cp;
-c2 = (gam*R*T2)^0.5;
-M(:,2,1) = v(:,2,1)./c2;
-p2 = p02r(1)*(1+(gam-1)*0.5*M(imid,2,2)^2)^(-gam/(gam-1));
-p02 = p2*(1+(gam-1)*0.5*M(imid,2,1)^2)^(gam/(gam-1));
-ro2 = p2/(R*T2);
+
 
 %% Radial Equilibrium between blade rows (Position 2)
 
 % Use Euler work equation to calculate change in enthalpy
 dh0 = U1 .* vth(:,2,1);
+
+% Initialise temperature, pressure, density arrays
+T(1:Nr,1) = T1;
+T0(1:Nr,1,1) = q.T01;
+T0(:,3,1) = T03; T0(:,1,2) = T01r; T0(:,2,3) = T02r;
+p(1:Nr,1) = p1;
+p0(1:Nr,1,1) = p01; p0(:,1,2) = p01r; p0(:,2,2) = p02r(1); 
+ro(1:Nr,1) = ro1;
+
+% Add in second row quantities
+p(imid,2) = p02r(1)*(1+(gam-1)*0.5*M(imid,2,2)^2)^(-gam/(gam-1));
+T(imid,2) = T2;
+ro(imid,2) = p(imid,2)/(R*T(imid,2));
 
 % Numerically solve Simple Radial Equilibrium equation
 
@@ -171,45 +178,62 @@ dh0 = U1 .* vth(:,2,1);
 for ii = imid:(Nr-1)
     dr = r(ii+1) - r(ii); % Radial increment
     vx(ii+1,2,1)     = vx(ii,2,1) + (dh0(ii+1) - dh0(ii))/vx(ii,2,1) - (vth(ii,2,1)/vx(ii,2,1)) * (vth(ii+1,2,1) - vth(ii,2,1)) - ((vth(ii,2,1)).*(vth(ii+1,2,1)) / vx(ii,2,1)) * (dr/r(ii));
+    p(ii+1,2)        = p(ii,2) + ro(ii,2) * (vth(ii,2,1)*vth(ii+1,2,1)) * (dr/r(ii));
+    T(ii+1,2)        = T(ii,2) + (p(ii+1,2) - p(ii,2)) / (ro(ii,2)*cp);
+    ro(ii+1,2)       = p(ii+1,2) / (R*T(ii+1,2));
 end
 for ii = imid:-1:2
     dr = r(ii) - r(ii-1);
     vx(ii-1,2,1)     = -(-vx(ii,2,1) + (dh0(ii) - dh0(ii-1))/vx(ii,2,1) - (vth(ii,2,1)/vx(ii,2,1)) * (vth(ii,2,1) - vth(ii-1,2,1)) - ((vth(ii,2,1)).*(vth(ii-1,2,1)) / vx(ii,2,1)) * (dr/r(ii)));
+    p(ii-1,2)        = -(-p(ii,2) + ro(ii,2) * (vth(ii,2,1)*vth(ii-1,2,1)) * (dr/r(ii)));
+    T(ii-1,2)        = -(-T(ii,2) + (p(ii,2) - p(ii-1,2)) / (ro(ii,2)*cp));
+    ro(ii-1,2)       = -(-p(ii-1,2) / (R*T(ii-1,2)));
 end
 vx(:,2,2) = vx(:,2,1); vx(:,2,3) = vx(:,2,1);
+
+
 
 %% Solve for vx3
 alpha(:,2,3) = atand(vth(:,2,3)./vx(:,2,1));
 v(:,2,3) = (vx(:,2,1).^2 + vth(:,2,3).^2).^0.5;
-M(:,2,3) = v(:,2,3)/c2;
 % a2r(2) = atand(vt2r(2) / vx2);
 % v2r(2) = (vx2^2 + vt2r(2)^2)^0.5;
 % M2r(2) = v2r(2)/c2;
-p02r(2) = p2*(1+(gam-1)*0.5*M(imid,2,3)^2)^(gam/(gam-1));
+% p02r(2) = p2*(1+(gam-1)*0.5*M(imid,2,3)^2)^(gam/(gam-1));
 Mndp02r(2) = gam / (gam-1)^0.5 .* M(imid,2,3) .* (1 + (gam-1)/2.*M(imid,2,3).^2).^(-0.5*(gam+1)/(gam-1));
 
-alpha(:,3,1) = 0; % Zero exit swirl
+% Correct stagnation quantities
+T0(:,2,:) = T(:,2) + 0.5*v(:,2,:).^2./cp;
+c2 = (gam*R*T(:,2)).^0.5;
+M(:,2,1) = v(:,2,1)./c2;
+M(:,2,3) = v(:,2,3)./c2;
+p0(:,2,1:3) = p(:,2).*(1+(gam-1).*0.5.*M(:,2,:).^2).^(gam/(gam-1));
 
-if k == 1 % Downstream Stator
-    p03=p02*exp(-L.L2/R); p03r=p03;
-    T03r=T03;
+% Zero exit swirl, hence there is no static or stagnation variation across the exit plane
+alpha(:,3,1) = 0; 
+
+if rpm2 == 0 % Downstream Stator
+    p0(:,3,1)=p0(imid,2,1)*exp(-L.L2/R); p0(:,3,3)=p0(:,3,1); % Fudge this to be equal across exit plane, loss evaluated at mean line
+    T0(:,3,3) = T0(:,3,1);
     alpha(:,3,3) = 0;
-    Mndp03 = Mndp4 * (p4 / p03) * sigma;
+    Mndp03 = Mndp4 * (p4 / p0(imid,3,1)) * sigma;
     M(:,3,1) = interp1(Mndp0,Mach,Mndp03);
     M(:,3,3) = M(:,3,1);
-    T3 = T03 .* (1 + (gam-1)/2.*M(imid,3,1).^2).^-1;
-    c3 = (gam*R*T3)^0.5;
-    v(:,3,1) = M(:,3,1) * (gam*R*T3)^0.5;
+    T(:,3) = T0(:,3,1) .* (1 + (gam-1)/2.*M(:,3,1).^2).^-1;
+    c3 = (gam*R*T(:,3)).^0.5;
+    v(:,3,1) = M(:,3,1) .* c3;
     v(:,3,3) = v(:,3,1);
     vx(:,3,1) = v(:,3,1); vx(:,3,2) = vx(:,3,1); vx(:,3,3) = vx(:,3,1);
-    p3 = p03*(1+0.5*(gam-1)*M(imid,3,1)^2)^(-gam/(gam-1));
-    ro3 = p3/(R*T3);
+    p(:,3) = p0(:,3,1).*(1+0.5.*(gam-1).*M(:,3,1).^2).^(-gam/(gam-1));
+    ro(:,3) = p(:,3)./(R*T(:,3));
 else % Downstream Rotor
-    p03r=p02r(2)*exp(-L.L2/R);
-    T03r=T02r;
+    p0(:,3,3) = p0(imid,2,3)*exp(-L.L2/R); % Fudge this to be equal across exit plane, loss evaluated at mean line
+%     p03r=p02r(2)*exp(-L.L2/R);
+%     T03r=T02r;
+    T0(:,3,3) = T0(:,2,2); % This should be corrected for k
     
     deltavx3 = 1;
-    vx3_low = (1-bisect_fac)*vx(:,1,1); vx3_high = (1+bisect_fac)*vx(:,1,1);
+    vx3_low = (1-bisect_fac)*vx(:,2,1); vx3_high = (1+bisect_fac)*vx(:,2,1);
     while abs(deltavx3) > 0.0001/100 %0.00001
         vx(:,3,1) = 0.5*(vx3_low + vx3_high);
         v(:,3,1) = vx(:,3,1);
@@ -217,10 +241,10 @@ else % Downstream Rotor
         alpha(:,3,3) = atand(vth(:,3,3)./vx(:,3,1));
 %         v3r = (vx3^2 + vt3r^2)^0.5;
 %         a3r = atand(vt3r / vx3);
-        Mndp03r = Mndp02r(2) * p02r(2)/p03r * cosd(alpha(imid,2,3))/cosd(alpha(imid,3,3));
+        Mndp03r = Mndp02r(2) * p0(imid,2,3)/p0(imid,3,3) * cosd(alpha(imid,2,3))/cosd(alpha(imid,3,3));
         M(:,3,3) = interp1(Mndp0,Mach,Mndp03r)* v(:,3,3)./v(imid,3,3);
-        T3 = T03r - 0.5*v(imid,3,3)^2 / cp;
-        vx3calc = (M(:,3,3).^2*gam*R*T3 - vth(:,3,3).^2).^0.5;
+        T(:,3) = T0(imid,3,3) .* (1 + (gam-1)/2.*M(imid,3,3).^2).^-1;%T0(imid,3,3) - 0.5.*v(imid,3,3).^2 ./ cp; % Forcing T3 constant across span
+        vx3calc = (M(:,3,3).^2.*gam.*R.*T(:,3) - vth(:,3,3).^2).^0.5;
         if (vx3calc(imid) - vx(imid,3,1)) > 0
             vx3_low = vx(:,3,1);
         else
@@ -229,17 +253,21 @@ else % Downstream Rotor
         deltavx3 = (vx3calc(imid) - vx(imid,3,1))/vx(imid,3,1);
     end
     vx(:,3,1) = v(:,3,1); vx(:,3,2) = vx(:,3,1); vx(:,3,3) = vx(:,3,1);
-    c3 = (gam*R*T3)^0.5;
-    p3 = p03r*(1+0.5*(gam-1)*M(imid,3,3)^2)^(-gam/(gam-1));
-    p03 = p3*(1+(gam-1)*0.5*M(imid,3,1)^2)^(gam/(gam-1));
-    ro3 = p3/(R*T3);
+    c3 = (gam*R*T(:,3)).^0.5;
+    p(:,3) = p0(imid,3,3)*(1+0.5*(gam-1)*M(imid,3,3)^2)^(-gam/(gam-1));
+    p0(:,3,1) = p(imid,3)*(1+(gam-1)*0.5*M(imid,3,1)^2)^(gam/(gam-1));
+    ro(:,3) = p(:,3)./(R*T(:,3));
 end
 
 % Backfilling arrays
 alpha(:,3,2) = atand(vth(:,3,2) ./ vx(:,3,2));
 v(:,3,2) = vx(:,3,2) ./ cosd(alpha(:,3,2));
-M(:,3,2) = v(:,3,2)/c3;
-M(:,3,1) = v(:,3,1)/c3;
+M(:,3,2) = v(:,3,2)./c3;
+M(:,3,1) = v(:,3,1)./c3;
+T0(:,3,2) = T(:,3)+0.5*v(:,3,2).^2./cp;
+T0(:,1,3) = T(:,1)+0.5*v(:,1,3).^2./cp;
+p0(:,3,2) = p(:,3).*(1+(gam-1)*0.5*M(:,3,2).^2).^(gam/(gam-1));
+p0(:,1,3) = p(:,1).*(1+(gam-1)*0.5*M(:,1,3).^2).^(gam/(gam-1));
 
 % de Haller number = V2/V1 in relevant frame
 % d.DH(:,1) = v(:,2,2)./v(:,1,2);
@@ -248,7 +276,6 @@ d.DH(1) = v(imid,2,2)./v(imid,1,2);
 d.DH(2) = v(imid,3,3)./v(imid,2,3);
 
 %% Calculating losses, chords, chis for each blade row 11/02
-Temp1 = [q.T1 T2]; % CHANGE TO STAG FOR BASE
 
 % Nb =        [0,0];
 % % BLT_SS =    [0,0];
@@ -267,6 +294,8 @@ for rr=1:2
     vupth = vth(:,rr,rr+1);
     vdwnth = vth(:,rr+1,rr+1);
     vxup = vx(:,rr,rr+1);
+    Tup = T0(:,rr,rr+1);
+    Tdwn = T0(:,rr+1,rr+1);
     % Multiplier to get angles in right direction while doing deviation calcs
     bl = round(rr-1.5);
     % Get angles into "cascade" frame, i.e. all positive, for deviation calcs
@@ -409,7 +438,7 @@ for rr=1:2
     BLDT_SS_g = BLDT_SS;
     BLDT_PS_g = BLDT_PS;
 
-    vTE = vdwn(ii) * (1 - solid(ii,rr) * ( (g.tTE + (BLDT_SS + BLDT_PS)/C) / cosd(adwn(ii))) ).^-1; % Dickens 9.2
+    vTE = vdwn(ii) * (1 - solid(ii,rr) * ( (g.tTE + BLDT_SS + BLDT_PS)/C / cosd(adwn(ii))) ).^-1; % Dickens 9.2
     vLE = vup(ii) * (0.98 + 0.5 * solid(ii,rr) * g.tmax * vxup(ii) / delvt(ii,rr)); % Dickens 9.3
 
     ATD = 0; % Roof-top parameter set to 0 - Dickens p147/8
@@ -435,8 +464,8 @@ for rr=1:2
     end
     BLT_SS(ii,rr)=BLDT_SS;
     BLT_PS(ii,rr)=BLDT_PS;
-    p1(ii,rr) = 2 * solid(ii,rr) * ((BLMT_PS + BLMT_SS)/C) / cosd(adwn(ii)) * (0.5 * vdwn(ii)^2 / Temp1(rr));  % mixing losses
-    p2(ii,rr) = (solid(ii,rr)*((BLDT_PS + BLDT_SS)/C + g.tTE) /cosd(adwn(ii)))^2 * (0.5 * vdwn(ii)^2 / Temp1(rr)); % profile loss
+    p1(ii,rr) = 2 * solid(ii,rr) * ((BLMT_PS + BLMT_SS)/C) / cosd(adwn(ii)) * (0.5 * vdwn(ii)^2 / Tup(ii));  % mixing losses
+    p2(ii,rr) = (solid(ii,rr)*(BLDT_PS + BLDT_SS + g.tTE)/C /cosd(adwn(ii)))^2 * (0.5 * vdwn(ii)^2 / Tup(ii)); % profile loss
     vLE_SSe(ii) = vLE_SS;
     vLE_PSe(ii) = vLE_PS;
     vTEe(ii) = vTE;
@@ -456,7 +485,7 @@ for rr=1:2
     %   Cpb = 0.2/0.15 *tw
     Cpb = -0.1; % Dickens p156 - based on turbines!
     %   base(rr) = - Cpb * solid * g.tTE / cosd(ang2(rr)) * (0.5 * vel2(rr)^2 / Temp1(rr)); % Base pressure loss
-    base(:,rr) = - Cpb .* solid(:,rr) .* g.tTE ./ cosd(adwn) .* (0.5 .* vdwn.^2 ./ Temp1(rr)); % Base pressure loss
+    base(:,rr) = - Cpb .* solid(:,rr) .* g.tTE./C ./ cosd(adwn) .* (0.5 .* vdwn.^2 ./ Tup(:)); % Base pressure loss
     baseT(rr) = ((base(1,rr) + base(Nr,rr))/2 + sum(base(2:(Nr-1),rr)) )/5; % finite volume method
     %% Tip/Shroud loss - evaluated using casing values
     % Shroud Loss - From Sungho Yoon Paper based on shroud losses for turbines in Denton
@@ -465,7 +494,7 @@ for rr=1:2
     %   tip(rr) =  2 * mm * (1 - (tand(ang1(rr)) * sind(ang2(rr)) * cosd(ang2(rr))) ) * (0.5 * vel2(rr)^2 / Temp1(rr)); %
     hb = rc - rh; % span
     mm = (g.gap * d.Cc / hb) * ((tand(aup(Nr)))^2 - (tand(adwn(Nr))^2))^0.5; % Yoon 5 %(g * Cc / hn) * (abs((1/cosd(ang2))^2 - (tand(ang1))^2 ))^0.5 % # mm = (g_s * Cc / H_b) * np.sqrt( (1/np.cos(a2))**2 - (np.tan(a2))**2 ) 
-    tip(rr) =  2 * mm * (1 - (tand(aup(Nr)) * sind(adwn(Nr)) * cosd(adwn(Nr))) ) * (0.5 * vdwn(Nr)^2 / Temp1(rr)); %
+    tip(rr) =  2 * mm * (1 - (tand(aup(Nr)) * sind(adwn(Nr)) * cosd(adwn(Nr))) ) * (0.5 * vdwn(Nr)^2 / Tup(Nr)); %
     if rpm2 == 0
         tip(2) = 0; % Stators have no gap, so no shroud loss
     end
@@ -480,9 +509,9 @@ for rr=1:2
     % Endwall Loss - comes from cd*V^3 argument but need to think about some more - important mechanisms I think
     endwallfun = @(x,ii) (((vLE_SSe(ii) + (vTEe(ii) - vLE_SSe(ii)).*x./Cx(ii,rr))).^3 + ((vLE_PSe(ii) + (vTEe(ii) - vLE_PSe(ii)).*x./Cx(ii,rr))).^3)./2;
     % Hub  
-    endwall_h = Cd * ((rm - hb/2)/rm)^3 / (vup(1)*Temp1(rr)*hb*cosd(aup(1))) * integral(@(x) endwallfun(x,1),0,Cx(1,rr));
+    endwall_h = Cd * ((rm - hb/2)/rm)^3 / (vup(1)*Tup(1)*hb*cosd(aup(1))) * integral(@(x) endwallfun(x,1),0,Cx(1,rr));
     % Casing
-    endwall_c = Cd * ((rm + hb/2)/rm)^3 / (vup(Nr)*Temp1(rr)*hb*cosd(aup(Nr))) * integral(@(x) endwallfun(x,Nr),0,Cx(Nr,rr));
+    endwall_c = Cd * ((rm + hb/2)/rm)^3 / (vup(Nr)*Tup(Nr)*hb*cosd(aup(Nr))) * integral(@(x) endwallfun(x,Nr),0,Cx(Nr,rr));
     % Total
     endwall(rr) = (endwall_h + endwall_c);
 end
@@ -512,10 +541,10 @@ d.mdot = q.Mndp01 * g.A1 * p01 / (cp*q.T01)^0.5;
 d.P = d.mdot * cp*(q.T03-q.T01);
 
 % Reaction
-d.Reaction = (T2-q.T1)/(T3-q.T1);
+d.Reaction = (T(:,2)-T(:,1))./(T(:,3)-T(:,1));
 
 % Tip Mach Number
-d.Mtip = (rpm1/60*2*pi*rc) / (gam*R*q.T1)^0.5;
+d.Mtip = (rpm1/60*2*pi*rc) / (gam*R*T(Nr,1))^0.5;
 
 % Propulsive efficiency and hover figure of merit
 d.Fr = 2*d.u0 / (d.u0+d.u4);
@@ -530,6 +559,6 @@ d.U1=U1; d.U2=U2; d.rpm1=rpm1; d.rpm2=rpm2;
 a.alpha=alpha; a.v=v; a.vx=vx; a.vth=vth;
 
 q.M = M;
-q.T01r=T01r; q.T02r=T02r; q.T03r=T03r; q.T02=T02; q.T2=T2; q.T3=T3;
-q.p01r=p01r; q.p02r=p02r; q.p03r=p03r; q.p02=p02; q.p03=p03; q.p1=p1; q.p2=p2; q.p3=p3;
-q.ro1=ro1; q.ro2=ro2; q.ro3=ro3;
+q.T0=T0; q.T=T;
+q.p0=p0; q.p=p;
+q.ro=ro;

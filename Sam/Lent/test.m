@@ -67,9 +67,10 @@ if ~isnan(a)
 end
 
 
-a=[1 2 3 4 5 6; 7 8 9 10 11 12];
+a=[1 2 3 4 5 6; 7 8 9 10 11 12]';
 sum(a(2:5,2))
 
-
-
+c=[1 2 3 4 5]/10;
+endwallfun = @(x,r) x.^2 + c(r);
+q = integral(@(x) endwallfun(x,5),0,2)
 

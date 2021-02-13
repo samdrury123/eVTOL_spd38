@@ -21,13 +21,15 @@ bluebear = 0;
 % DONE Radial Equilibrium
 % DONELook at removing CRDF flag
 % DONE Change tmax, tTe to be percentages of chord
-% Improve variable naming for velocities - make location an index
+% DONE Improve variable naming for velocities - make location an index
 % DONE Add loss charts
-% Rename rloss, sloss to b1, b2 
-% Rename Nr, Ns to N1, N2
+% DONE Rename rloss, sloss to b1, b2 
+% DONE Rename Nr, Ns to N1, N2
 % ERROR HANDLING
-% Merge VelTriangles and BladeLoss
+% DONE Merge VelTriangles and BladeLoss
 % Merge a and q structs?
+% DONE Tidy up names for functions
+% Vary T,p,rho spanwise
 
 %% Input variables
 
@@ -95,8 +97,8 @@ N.sigmas = init;
 N.etas = init;  % Fan efficiency 
 N.Rs = init; % Reaction
 N.rpms = init; % rpm
-N.Nr = init; % Blade count row 1
-N.Ns = init; % Blade count row 2
+N.N1 = init; % Blade count row 1
+N.N2 = init; % Blade count row 2
 N.Frs = init; % Propulsive efficiency
 N.psis = init;
 N.FOMs = init; % Figure of Merit
@@ -120,12 +122,12 @@ d.sigma = sigmalist(ss);
 
 %% Iteation loop for NRF losses
 
-L.Lr = 0;     % Entropy change in rotor
-L.Ls = 0;     % Entropy change in stator
-L.deltaLr = 1;
-L.deltaLs = 1;
+L.L1 = 0;     % Entropy change in rotor
+L.L2 = 0;     % Entropy change in stator
+L.deltaL1 = 1;
+L.deltaL2 = 1;
 
-while abs(L.deltaLr) > 0.001/100 && abs(L.deltaLs) > 0.001/100
+while abs(L.deltaL1) > 0.001/100 && abs(L.deltaL2) > 0.001/100
 % Iteration loop to find T03 and T04, again improve so not absolute value
 [d,g,q] = CVanalysis_comp(d,g,q,L);
 % Meanline velocity triangles
@@ -145,29 +147,29 @@ if ~isnan(g.Nb(:))
     N.etas(pp,ss) = d.eta;  % Fan efficiency 
     N.Rs(pp,ss) = d.Reaction; % Reaction
     N.rpms(pp,ss) = d.rpm1; % rpm
-    N.Nr(pp,ss) = g.Nb(1); % Blade count row 1
-    N.Ns(pp,ss) = g.Nb(2); % Blade count row 2
+    N.N1(pp,ss) = g.Nb(1); % Blade count row 1
+    N.N2(pp,ss) = g.Nb(2); % Blade count row 2
     N.Frs(pp,ss) = d.Fr; % Propulsive efficiency
     N.psis(pp,ss) = d.psi;
     N.FOMs(pp,ss) = d.Mf;
-    Ltot = L.Lr + L.Ls; 
+    Ltot = L.L1 + L.L2; 
     N.Ltot(pp,ss) = Ltot;
     N.L_eta(pp,ss) = L.eta_s;
-    N.profL(pp,ss) = (L.rLoss.prof + L.sLoss.prof)/Ltot;
-    N.baseL(pp,ss) = (L.rLoss.base + L.sLoss.base)/Ltot;
-    N.tipL(pp,ss) = (L.rLoss.tip + L.sLoss.tip)/Ltot;
-    N.endwallL(pp,ss) = (L.rLoss.endwall + L.sLoss.endwall)/Ltot;
+    N.profL(pp,ss) = (L.Loss1.prof + L.Loss2.prof)/Ltot;
+    N.baseL(pp,ss) = (L.Loss1.base + L.Loss2.base)/Ltot;
+    N.tipL(pp,ss) = (L.Loss1.tip + L.Loss2.tip)/Ltot;
+    N.endwallL(pp,ss) = (L.Loss1.endwall + L.Loss2.endwall)/Ltot;
     N.DH1(pp,ss) = d.DH(1);
     N.DH2(pp,ss) = d.DH(2);
 end
 %% Iteation loop for CRF losses
 
-L.Lr = 0;     % Entropy change in rotor
-L.Ls = 0;     % Entropy change in stator
-L.deltaLr = 1;
-L.deltaLs = 1;
+L.L1 = 0;     % Entropy change in rotor
+L.L2 = 0;     % Entropy change in stator
+L.deltaL1 = 1;
+L.deltaL2 = 1;
 % Iteation loop for CRF losses
-while abs(L.deltaLr) > 0.001/100 && abs(L.deltaLs) > 0.001/100
+while abs(L.deltaL1) > 0.001/100 && abs(L.deltaL2) > 0.001/100
 % Iteration loop to find T03 and T04, again improve so not absolute value
 [d,g,q] = CVanalysis_comp(d,g,q,L);
 % Meanline velocity triangles
@@ -182,26 +184,25 @@ CRF.d=d; CRF.g=g; CRF.a=a; CRF.q=q; CRF.L=L;
 % Finished loss loop so everything defined. The rest is gathering together
 % outputs
 % Hacking together arrays to plot
-for bb=1:2
-    if ~isnan(g.Nb(:))
-C.phis(pp,ss) = d.phi;
-C.sigmas(pp,ss) = d.sigma;
-C.etas(pp,ss) = d.eta;  % Fan efficiency 
-C.Rs(pp,ss) = d.Reaction; % Reaction
-C.rpms(pp,ss) = d.rpm1; % rpm
-C.Nr(pp,ss) = g.Nb(1); % Blade count row 1
-C.Ns(pp,ss) = g.Nb(2); % Blade count row 2
-C.Frs(pp,ss) = d.Fr; % Propulsive efficiency
-C.psis(pp,ss) = d.psi;
-C.FOMs(pp,ss) = d.Mf;
-Ltot = L.Lr + L.Ls; 
-C.Ltot(pp,ss) = Ltot;
-C.L_eta(pp,ss) = L.eta_s;
-C.profL(pp,ss) = (L.rLoss.prof + L.sLoss.prof)/Ltot;
-C.baseL(pp,ss) = (L.rLoss.base + L.sLoss.base)/Ltot;
-C.tipL(pp,ss) = (L.rLoss.tip + L.sLoss.tip)/Ltot;
-C.endwallL(pp,ss) = (L.rLoss.endwall + L.sLoss.endwall)/Ltot;
-    end
+
+if ~isnan(g.Nb(:))
+    C.phis(pp,ss) = d.phi;
+    C.sigmas(pp,ss) = d.sigma;
+    C.etas(pp,ss) = d.eta;  % Fan efficiency 
+    C.Rs(pp,ss) = d.Reaction; % Reaction
+    C.rpms(pp,ss) = d.rpm1; % rpm
+    C.N1(pp,ss) = g.Nb(1); % Blade count row 1
+    C.N2(pp,ss) = g.Nb(2); % Blade count row 2
+    C.Frs(pp,ss) = d.Fr; % Propulsive efficiency
+    C.psis(pp,ss) = d.psi;
+    C.FOMs(pp,ss) = d.Mf;
+    Ltot = L.L1 + L.L2; 
+    C.Ltot(pp,ss) = Ltot;
+    C.L_eta(pp,ss) = L.eta_s;
+    C.profL(pp,ss) = (L.Loss1.prof + L.Loss2.prof)/Ltot;
+    C.baseL(pp,ss) = (L.Loss1.base + L.Loss2.base)/Ltot;
+    C.tipL(pp,ss) = (L.Loss1.tip + L.Loss2.tip)/Ltot;
+    C.endwallL(pp,ss) = (L.Loss1.endwall + L.Loss2.endwall)/Ltot;
 end
 
 %% Store outputs in structures
@@ -221,18 +222,26 @@ design(pp,ss).CRF = CRF; design(pp,ss).CRF.phisig = [d.phi, d.sigma];
 % Advance ratio and loading coefficient
 % J = u0 / (rpm/60 * 2*rc);
 % CT = Th / (roatm * (rpm/60)^2 * (2*rc)^4);
+% lots of small or one big
+% thrusts for same op point
+% compare different methods of op point matching
+% MISMATCH OF cruise and hover op points - fundamental challenge
 
 % Summarise
 display(['phi = ' num2str(d.phi) '  sigma = ' num2str(d.sigma) '   Time = ' num2str(toc,3) ]);
     end
 end
 
-%% NRF Plotting
+%% Plotting
+% Limits used for plotting, ensures effective comparisons
 lims.Nb = [0 25]; % Sets limit of colormap for blade numbers
 lims.L = [0 0.5]; % Sets loss limits between 0 and 1
-lims.Ltot = [min(min(N.Ltot(:)), min(C.Ltot(:))) max(max(N.Ltot(:)), max(C.Ltot(:)))]; % Normalises loss graphs to show improvement
+lims.Ltot = [min(min(N.Ltot(:)), min(C.Ltot(:))) max(max(N.Ltot(:)), max(C.Ltot(:)))];
 
 % Need to improve de Haller plotting
 PlotCharts(N,lims);
 % PlotCharts(C,lims);
+
+% PlotVels(blah)
+% velocity triangles, profiles (hub tip mean)
 

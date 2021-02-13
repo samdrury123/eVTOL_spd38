@@ -2,28 +2,28 @@
 function [d,g,q] = CVanalysis_comp(d,g,q,L)
 
 % REDO THIS
-% Function using continuity, SFME and SFEE to analyse ducted fan MEANLINE
+% Function using non-dimensional compressible relations to analyse ducted
+% fans at the mean line
+
 % Inputs: 
-% - atm: atmospheric conditions
 % - g: geometry of fan
-% - eta: aerodynamic and electric system efficiencies
-% - d.T: required thrust
+% - d.Th: required thrust
 % - d.u0: required forward speed
-% - d.phi: flow coefficient of fan, can be an array
-% - d.sig: area ratio of exit nozzle, can be an array
+% - d.phi: flow coefficient of fan
+% - d.sigma: area ratio of exit nozzle
+% - q.atm: atmospheric conditions at flight altitude
+% - L.L1: entropy change across blade 1
+% - L.L2: entropy change across blade 2
 % Outputs: 
-% - P: Ideal, shaft and electrical power in kW
-% - vel: upstream, inlet and exit velocity, and blade velocities
-% - rpm: shaft speed
-% - psi: non-dimensional pressure rise, total-total and total-to-static
-% - load: disk loading and thrust to power
+% - d.u1, d.u4: inlet/exit velocities
+% - d.Um: mean line blade speed
+% - d.rpm: shaft speed
+% - d.psi: non-dimensional pressure rise, total-total
+% - g: updated geometry of fan
+% - q: Mach numbers, temperatures and pressures (aero quantities)
 
 %% Unpack
-Th = d.Th; % Thrust
-u0 = d.u0; % Flight speed
-Tatm = q.atm.T; patm = q.atm.P;    
-D = g.D; % Casing diameter
-htrat = g.htrat; % Hub-to-tip ratio
+Tatm = q.atm.T; patm = q.atm.P;
 gam = q.gam;
 R = q.R;
 cp = q.cp;
@@ -31,14 +31,14 @@ phi = d.phi;
 sigma = d.sigma;
 
 % Calculate geometry
-rc = D/2; 
-rh = rc*htrat;
-rm = ((rc^2+rh^2)/2)^0.5;
-A1 = pi*(rc^2 - rh^2);
-A4 = A1 * sigma;
+g.rc = g.D/2; 
+g.rh = g.rc*g.htrat;
+g.rm = ((g.rc^2+g.rh^2)/2)^0.5;
+g.A1 = pi*(g.rc^2 - g.rh^2);
+g.A4 = g.A1 * sigma;
 
 % Flight Mach Number and stagnation quantities
-M0 = u0 / (gam*R*Tatm)^0.5;
+M0 = d.u0 / (gam*R*Tatm)^0.5;
 p00 = patm ./ (1 + (gam-1)/2.*M0.^2).^-(gam/(gam-1));
 T00 = Tatm ./ (1 + (gam-1)/2.*M0.^2).^-1;
 
@@ -60,12 +60,10 @@ T04 = T03;
 
 
 deltaT=1;
-% deltaT_c = 0;
-while abs(deltaT) > 0.001/100 %0.005 Now changing to percentagedeltaT_count
-%     deltaT_c = deltaT_c+1;
+while abs(deltaT) > 0.001/100
     % Non-dimensional momentum equation with impulse function (see 3A3 EP2,Q1)
-    Thcalc = A4.* (Fnd .* Mndp .* p4 - patm) - Mndp .* (cp*T04).^-0.5 .* p4 .* A4 .* u0;
-    M4 = interp1(Thcalc,Mach,Th);
+    Thcalc = g.A4.* (Fnd .* Mndp .* p4 - patm) - Mndp .* (cp*T04).^-0.5 .* p4 .* g.A4 .* d.u0;
+    M4 = interp1(Thcalc,Mach,d.Th);
     Fnd4 = (gam-1).^0.5 ./ gam .* (1+gam.*M4.^2) ./ M4 .* (1 + (gam-1)/2.*M4.^2).^-0.5;
     
     % Exit conditions 
@@ -87,13 +85,13 @@ while abs(deltaT) > 0.001/100 %0.005 Now changing to percentagedeltaT_count
     
     % Blade speed from flow coefficient
     Um = u1/phi;
-    rpm = Um / (2*pi*rm) * 60;
+    rpm = Um / (2*pi*g.rm) * 60;
 
     % Stage loading
     psi = cp*(T04-T01) / Um^2;
 
     % Use loss to get T03
-    T03calc = T01* exp((L.Lr + L.Ls + R*log(p03/p01))/cp);
+    T03calc = T01* exp((L.L1 + L.L2 + R*log(p03/p01))/cp);
     
     % Isentropic case
     T03s = T01 .* (p03/p01).^((gam-1)/gam);
@@ -105,7 +103,6 @@ while abs(deltaT) > 0.001/100 %0.005 Now changing to percentagedeltaT_count
 end
 
 %% Repacking into structs
-g.rc=rc; g.rh=rh; g.rm=rm; g.A1=A1; g.A4=A4;
 d.u1=u1; d.u4=u4; d.Um=Um; d.rpm=rpm; d.psi=psi;
 q.M0=M0; q.M1=M1; q.M4=M4; q.Mndp4=Mndp4; q.Mndp01=Mndp01;
 q.T00=T00; q.T01=T01; q.T03=T03; q.T03s=T03s; q.T04=T04;

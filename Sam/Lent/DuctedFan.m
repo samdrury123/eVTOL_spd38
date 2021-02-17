@@ -1,21 +1,15 @@
 clear; close all;
 
 %% SPD Radial Eq 08/02
-bluebear = 1;
-% CRDF_flag = 0; % Change this maybe?
+bluebear = 0;
 
 %% Still to add:
-% Vortex exponent
-% Radial equilibrium
-% Couple these with the blade profile losses
 % Check what needs to be sent to CAD
-% Improve variable naming for velocities - make location an index
 % Should gap be percentage of span?
 % Exit swirl
 % ERROR HANDLING
-% Allow NRF and CRF structs
-% Add efficiencies - two motors has greater inefficiencies 
-% Make trailing edge thickness absolute
+% Add efficiencies - two motors has greater inefficiencies
+% On PlotVels, change x acis to [-0.1 1.1] and plot vLE as well as V?
 
 %% To be added in this branch:
 % DONE Vortex exponent
@@ -83,7 +77,7 @@ sigmalist = [0.7 0.8 0.9 1 1.1 1.2];
 % sigmalist = [0.9 1 1.1];
 philist = [0.5 0.6 0.7 0.8 0.9];
 % philist = [0.7 0.8];
-% sigmalist=1.2;
+% sigmalist=1.1;
 % philist=.8;
 
 % Initialise structs, plotting arrays

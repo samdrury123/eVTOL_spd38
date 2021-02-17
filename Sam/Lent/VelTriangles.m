@@ -176,7 +176,6 @@ ro(imid,2) = p(imid,2)/(R*T(imid,2));
 
 % Numerically solve Simple Radial Equilibrium equation
 
-% Solve
 for ii = imid:(Nr-1)
     dr = r(ii+1) - r(ii); % Radial increment
     vx(ii+1,2,1)     = vx(ii,2,1) + (dh0(ii+1) - dh0(ii))/vx(ii,2,1) - (vth(ii,2,1)/vx(ii,2,1)) * (vth(ii+1,2,1) - vth(ii,2,1)) - ((vth(ii,2,1)).*(vth(ii+1,2,1)) / vx(ii,2,1)) * (dr/r(ii));
@@ -193,11 +192,15 @@ for ii = imid:-1:2
 end
 vx(:,2,2) = vx(:,2,1); vx(:,2,3) = vx(:,2,1);
 
+% Reset alpha and v according to vx spanwise distribution
+alpha(:,2,:) = atand(vth(:,2,:) ./ vx(:,2,:));
+v(:,2,:) = (vx(:,2,:).^2 + vth(:,2,:).^2) .^0.5;
 
 
 %% Solve for vx3
-alpha(:,2,3) = atand(vth(:,2,3)./vx(:,2,1));
-v(:,2,3) = (vx(:,2,1).^2 + vth(:,2,3).^2).^0.5;
+% alpha(:,2,3) = atand(vth(:,2,3)./vx(:,2,1));
+% v(:,2,3) = (vx(:,2,1).^2 + vth(:,2,3).^2).^0.5;
+% v(:,2,1) = (vx(:,2,1).^2 + vth(:,2,1).^2) .^0.5;
 % a2r(2) = atand(vt2r(2) / vx2);
 % v2r(2) = (vx2^2 + vt2r(2)^2)^0.5;
 % M2r(2) = v2r(2)/c2;
@@ -280,9 +283,7 @@ d.DH(2) = v(imid,3,3)./v(imid,2,3);
 
 %% Calculating losses, chords, chis for each blade row 11/02
 
-% Nb =        [0,0];
-% % BLT_SS =    [0,0];
-% % BLT_PS =    [0,0];
+% Initialise loss components to be stored
 prof1 =     [0,0];
 prof2 =     [0,0];
 baseT =      [0,0];
@@ -320,9 +321,16 @@ for rr=1:2
     sc_rat(:,rr) = (d.DF - (1 - vdwn./vup)) * 2 .* vup  ./ delvt(:,rr);
     s(:,rr) = C*sc_rat(:,rr);
     g.Nb(rr) = round(2*pi*rm / s(imid,rr));
-    if g.Nb(rr)<1 || g.Nb(rr)>60
+    if g.Nb(rr)<1
         g.Nb(rr) = NaN;
         disp('Negative s/c')
+        L.deltaL1 = 1e-10; % satisfy criterion to exit loop
+        L.deltaL2 = 1e-10;
+        a = 0;
+        return
+    elseif g.Nb(rr)>60
+        g.Nb(rr) = NaN;
+        disp(['Number of blades in blade ' num2str(rr) ' exceeds 60'])
         L.deltaL1 = 1e-10; % satisfy criterion to exit loop
         L.deltaL2 = 1e-10;
         a = 0;

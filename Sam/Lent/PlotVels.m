@@ -114,90 +114,12 @@ for rr = 1:3 % radial position
      end   
   end
 end
-legend('B1','B2','Location','SouthOutside');
 title(['Phi: ' num2str(phi) '  Sigma: ' num2str(sigma) '  Psi: ' num2str(psi,3)])
 
 
-%%
-% figure;set(gcf, 'color', 'w'); grid off; box on;
-% 
-% plot(xs,V1); legend
-% figure;set(gcf, 'color', 'w'); grid off; box on;
-% set(gcf,'Position',[20 150 1400 600]);
-% 
-% % Velocity profile
-% Nr = size(r,1);
-% rind = [1,imid,Nr];
-% % Vss(rind,:,1)'
-% % DF
-% cols = {'-ro';'-bx';'-ksq'};
-% % legend('B1', 'B2','Location','SouthOutside')
-% 
-% % for ii = 1:3 % radial position
-%     subplot(2,6,1:2); hold on; box on
-%     plot(x,Vss(rind,:,1)','-ro');
-%     plot(x,Vps(rind,:,1)');
-%     xlabel('x/{c_x}')
-%     ylabel('Velocity (m/s)')
-%     %     set(gca,'ytick',[])
-%     %     xlim([-120 120])
-% %     subplot(2,6,7:8); hold on; box on
-% %     plot(x,Vss(rind(ii),:,2),cols{ii});
-% %     plot(x,Vps(rind(ii),:,2),cols{ii});
-% %     xlabel('x/{c_x}')
-% %     ylabel('Velocity (m/s)')
-%     %     set(gca,'ytick',[])
-%     %     xlim([-120 120])
-% % end
-% subplot(2,6,1:2); hold on;
-% y1=ylim;
-% text(0.8,0.95*y1(2),'Blade 1')
-% subplot(2,6,7:8); hold on;
-% y2=ylim;
-% text(0.8,0.95*y2(2),'Blade 2')
+%% Testing area
 
-% Diffusion factor
-% figure; hold on; grid off; box on;
-% plot(span,DF);
-% plot([0.45 0.45],[0 1],'--r')
-% xlabel('Diffusion Factor')
-% legend('B1', 'B2','Location','SouthOutside')
-% xlim([0 0.6])
-% span
-% DF
-% x
-% V=Vss(rind,:,1)'
-% figure;
-% plot(x,Vss(rind,:,1)')
-%     set(gca,'ytick',[])
-%     xlim([-120 120])
-% legend('B1', 'B2','Location','SouthOutside')
-% 
-% for ii = 1:3 % radial position
-%     subplot(2,6,1:2); hold on; box on
-%     plot(x,Vss(rind(ii),:,1),cols{ii});
-%     plot(x,Vps(rind(ii),:,1),cols{ii});
-%     xlabel('x/{c_x}')
-%     ylabel('Velocity (m/s)')
-%     %     set(gca,'ytick',[])
-%     %     xlim([-120 120])
-%     subplot(2,6,7:8); hold on; box on
-%     plot(x,Vss(rind(ii),:,2),cols{ii});
-%     plot(x,Vps(rind(ii),:,2),cols{ii});
-%     xlabel('x/{c_x}')
-%     ylabel('Velocity (m/s)')
-%     %     set(gca,'ytick',[])
-%     %     xlim([-120 120])
-% end
-% subplot(2,6,1:2); hold on;
-% y1=ylim;
-% text(0.8,0.95*y1(2),'Blade 1')
-% subplot(2,6,7:8); hold on;
-% y2=ylim;
-% text(0.8,0.95*y2(2),'Blade 2')
-
-
-% 
+% Blade flow/metal angles
 % figure;
 % % Blade 1 relative flow and metal angles
 %    subplot(4,6,[15 21]); hold on;grid off; box on;

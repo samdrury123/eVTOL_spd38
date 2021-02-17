@@ -80,21 +80,21 @@ subplot(2,3,6)
 contourf(phis,sigmas,D.L_eta,25, 'edgecolor','none'); colorbar
 title("Entropy efficiency"); xlabel("\phi"); ylabel("\sigma");
 
-%Sigmas
+%Sigmas DH with efficiency
 figure;set(gcf, 'color', 'w'); grid off; box on;
 set(gcf,'Position',[200 50 1200 600]);
 subplot(1,2,1)
 contourf(phis,sigmas,D.DH1,25, 'edgecolor','none'); colorbar; caxis(caxis);
 hold on;
 contour(phis,sigmas,D.DH1, [0.72 0.72], 'r--', 'LineWidth',2);
-[C2,h2] = contour(phis,sigmas,D.L_eta, 'r:', 'LineWidth',1.5);
+[C2,h2] = contour(phis,sigmas,D.etas, 'r:', 'LineWidth',1.5);
 clabel(C2,h2); h2.LabelSpacing = 500; 
 title("Blade 1 de Haller number ( > 0.72 for minimal loss) with contours of efficiency"); xlabel("\phi"); ylabel("\sigma"); hold off;
 subplot(1,2,2)
 contourf(phis,sigmas,D.DH2,25, 'edgecolor','none'); colorbar; caxis(caxis);
 hold on;
 contour(phis,sigmas,D.DH2, [0.72 0.72], 'r--', 'LineWidth',2);
-[C3,h3] = contour(phis,sigmas,D.L_eta, 'r:', 'LineWidth',1.5);
+[C3,h3] = contour(phis,sigmas,D.etas, 'r:', 'LineWidth',1.5);
 clabel(C3,h3); h3.LabelSpacing = 500;
 title("Blade 2 de Haller number ( > 0.72 ) with contours of efficiency"); xlabel("\phi"); ylabel("\sigma"); hold off;
 

@@ -1,5 +1,5 @@
 %% ---- FUNCTION: VELOCITY TRIANGLES ---- %%
-function [d,g,a,q,L] = VelTriangles(d,g,q,L,k)
+function [d,g,a,q,L] = VelTriangles(d,g,q,L,k,dev)
 
 % Function calculates velocities and angles for conventional or
 % counter-rotating fan, as well as the losses in each blade row
@@ -51,8 +51,9 @@ g.r=r;
 % end
 
 % Split blade speeds between rows (CRDF)
-U1 = Um*k;      rpm1 = U1/(2*pi*rm) * 60;
-U2 = -Um*(1-k); rpm2 = U2/(2*pi*rm) * 60;
+Um = r ./ rm * Um;
+U1 = Um*k;      rpm1 = d.rpm*k;
+U2 = -Um*(1-k); rpm2 = -d.rpm*(1-k);
 
 % Set up spanwise stage loading coefficient, enthalpy and vtheta
 psi = psi .* (rm ./ r).^ (g.n+1);
@@ -67,7 +68,7 @@ vth(:,1,3) = vth(:,1,1) - U2;
 
 % Calculate velocities and angles downstream of blade 1, including axial
 % velocity distribution from radial equilibrium equation
-vth(:,2,1) = U1 * psi / k; %(Um*psi)
+vth(:,2,1) = U1 .* psi / k; %(Um*psi)
 vth(:,2,2) = vth(:,2,1) - U1;
 vth(:,2,3) = vth(:,2,1) - U2;
 
@@ -129,7 +130,8 @@ bisect_fac = 2/100;
 vx2_low = (1-bisect_fac)*vx(:,1,1); vx2_high = (1+bisect_fac)*vx(:,1,1);
 deltavx2 = 1;
 
-while abs(deltavx2) > 0.0001/100 %0.00001
+while abs(deltavx2) > 0.01/100 %0.00001
+%     disp('vx2 loop')
     vx(:,2,1) = 0.5*(vx2_low + vx2_high);
     alpha(:,2,1) = atand(vth(:,2,1) ./ vx(:,2,1));
     alpha(:,2,2) = atand(vth(:,2,2) ./ vx(:,2,1));
@@ -235,6 +237,7 @@ else % Downstream Rotor
     deltavx3 = 1;
     vx3_low = (1-bisect_fac)*vx(:,2,1); vx3_high = (1+bisect_fac)*vx(:,2,1);
     while abs(deltavx3) > 0.0001/100 %0.00001
+%         disp('vx3 loop')
         vx(:,3,1) = 0.5*(vx3_low + vx3_high);
         v(:,3,1) = vx(:,3,1);
         v(:,3,3) = (vx(:,3,1).^2 + vth(:,3,3).^2).^0.5;
@@ -303,7 +306,7 @@ for rr=1:2
     adwn =  bl * alpha(:,rr+1,rr+1);
 
     % Blade Geometry
-    C = (rc - rh)/g.AR; % chord %%THIS WILL NEED CHANGED FOR RADIAL EQ
+    C = (rc - rh)/g.AR; % initial guess, chord at mean line
     stag(:,rr) = (aup + adwn)/2;
     %   stag = (ang1(rr) + ang2(rr))/2; % stagger angle
     %   Cx = C * cosd(stag); % axial chord
@@ -318,7 +321,12 @@ for rr=1:2
     s(:,rr) = C*sc_rat(:,rr);
     g.Nb(rr) = round(2*pi*rm / s(imid,rr));
     if g.Nb(rr)<1 || g.Nb(rr)>60
-      g.Nb(rr) = NaN;
+        g.Nb(rr) = NaN;
+        disp('Negative s/c')
+        L.deltaL1 = 1e-10; % satisfy criterion to exit loop
+        L.deltaL2 = 1e-10;
+        a = 0;
+        return
     end
     %   s = 2 * pi * rm / Nb(rr);
     %   solid = C/s;
@@ -326,7 +334,7 @@ for rr=1:2
     solid(:,rr) = C./g.s(:,rr);
 
     %% Chi, Chord, DF
-    dev = 1; % d is whether to design with constant deviation across span 
+%     dev = 1; % d is whether to design with constant deviation across span 
     %        - d = 0: chord is set to given constant diffusion factor across span
     %        - d = 1:  chord is set to give constant deviation across span based on midspan value
     if dev==0 
@@ -382,7 +390,10 @@ for rr=1:2
     g.chi(:,2,rr) = bl .* chi(:,2,rr);
 
     % Recalculate Diffusion Factor based on chords calculated 
-    DFspan(1:Nr,rr) = (1 - vdwn./vup) + abs(vupth - vdwnth) ./ (2.*vup) .* (g.s(:,rr) ./ g.c(:,rr));
+    a.DFspan(1:Nr,rr) = (1 - vdwn./vup) + abs(vupth - vdwnth) ./ (2.*vup) .* (g.s(:,rr) ./ g.c(:,rr));
+    if a.DFspan > 0.6
+        disp('Warning: DF > 0.6')
+    end
 
     %% Calculate Losses
     
@@ -437,10 +448,11 @@ for rr=1:2
 
     BLDT_SS_g = BLDT_SS;
     BLDT_PS_g = BLDT_PS;
+    C = g.c(ii,rr);
 
     vTE = vdwn(ii) * (1 - solid(ii,rr) * ( (g.tTE + BLDT_SS + BLDT_PS)/C / cosd(adwn(ii))) ).^-1; % Dickens 9.2
     vLE = vup(ii) * (0.98 + 0.5 * solid(ii,rr) * g.tmax * vxup(ii) / delvt(ii,rr)); % Dickens 9.3
-
+    
     ATD = 0; % Roof-top parameter set to 0 - Dickens p147/8
     delv = 3 * vxup(ii) * delvt(ii,rr) / (solid(ii,rr) * cosd(stag(ii,rr)) * ((2*vLE*(1+2*ATD))+vTE*(1-ATD))); % Dickens 9.1 
     vLE_SS = vLE + delv;
@@ -459,9 +471,14 @@ for rr=1:2
     BLET_PS= (2/vTE^3) * Cd * integral(profilefun_PS1,0,ATD*C) + (2/vTE^3) * Cd * integral(profilefun_PS2,ATD*C,C); % 9.10
     BLDT_PS = BLET_PS/(3*He - 4);
     BLMT_PS = BLET_PS/He;
-
-
+    
     end
+    
+    % Storing velocity profiles for plotting later
+    x = linspace(0,C,21);
+    a.Vss(ii,1:size(x,2),rr) = profilefun_SS2(x).^(1/3);
+    a.Vps(ii,1:size(x,2),rr) = profilefun_PS2(x).^(1/3);
+    
     BLT_SS(ii,rr)=BLDT_SS;
     BLT_PS(ii,rr)=BLDT_PS;
     p1(ii,rr) = 2 * solid(ii,rr) * ((BLMT_PS + BLMT_SS)/C) / cosd(adwn(ii)) * (0.5 * vdwn(ii)^2 / Tup(ii));  % mixing losses
@@ -485,7 +502,7 @@ for rr=1:2
     %   Cpb = 0.2/0.15 *tw
     Cpb = -0.1; % Dickens p156 - based on turbines!
     %   base(rr) = - Cpb * solid * g.tTE / cosd(ang2(rr)) * (0.5 * vel2(rr)^2 / Temp1(rr)); % Base pressure loss
-    base(:,rr) = - Cpb .* solid(:,rr) .* g.tTE./C ./ cosd(adwn) .* (0.5 .* vdwn.^2 ./ Tup(:)); % Base pressure loss
+    base(:,rr) = - Cpb .* solid(:,rr) .* g.tTE./g.c(:,rr) ./ cosd(adwn) .* (0.5 .* vdwn.^2 ./ Tup(:)); % Base pressure loss
     baseT(rr) = ((base(1,rr) + base(Nr,rr))/2 + sum(base(2:(Nr-1),rr)) )/5; % finite volume method
     %% Tip/Shroud loss - evaluated using casing values
     % Shroud Loss - From Sungho Yoon Paper based on shroud losses for turbines in Denton
@@ -523,15 +540,39 @@ L2calc = prof(2) + baseT(2) + tip(2) + endwall(2); %2nd row, note no gap for sta
 
 % Calculating efficiency from entropy
 L.eta_s = q.cp*(q.T03s - q.T01) / ( q.cp*(q.T03 - q.T01) + q.T01*(L1calc+L2calc));
+if L.eta_s < 0.4
+    a=0;
+    return
+end
 
 %% Change in losses for while loop, Repack structures
+% dL1 = (L1calc - L.L1)/L.L1;
+% dL2 = (L2calc - L.L2)/L.L2;
+% if abs(dL1) > 0.8*abs(L.L1)
+%     L.deltaL1 = 0.5*dL1;
+%     L.L1 = L.L1 + 0.5*(L1calc-L.L1);
+% %     disp('smoothing 1')
+% else
+%     L.deltaL1 = dL1;
+%     L.L1 = L1calc;
+% %     disp('not smoothing 1')
+% end
+% if abs(dL2) > 0.8*abs(L.L2)
+%     L.deltaL2 = 0.5*dL2;
+%     L.L2 = L.L2 + 0.5*(L2calc-L.L2);
+% %     disp('smoothing 2')
+% else
+%     L.deltaL2 = dL2;
+%     L.L2 = L2calc;
+% %     disp('not smoothing 1')
+% end
 L.deltaL1 = (L1calc - L.L1)/L.L1;
 L.deltaL2 = (L2calc - L.L2)/L.L2;
 L.L1 = L1calc;
 L.L2 = L2calc;
 L.Loss1.prof=prof(1); L.Loss1.base=baseT(1); L.Loss1.tip=tip(1); L.Loss1.endwall=endwall(1);
 L.Loss2.prof=prof(2); L.Loss2.base=baseT(2); L.Loss2.tip=tip(2); L.Loss2.endwall=endwall(2);
-L.Loss1.BLT_SS=BLT_SS(:,1); L.Loss1.BLT_PS=BLT_PS(:,1); L.Loss2.BLT_SS=BLT_SS(:,2); L.Loss2.BLT_PS=BLT_SS(:,2); 
+L.Loss1.BLT_SS=BLT_SS(:,1); L.Loss1.BLT_PS=BLT_PS(:,1); L.Loss2.BLT_SS=BLT_SS(:,2); L.Loss2.BLT_PS=BLT_PS(:,2); 
 
 
 %% Calculating operating point quantities
@@ -557,6 +598,7 @@ d.eta = (q.T03s - q.T01) / (q.T03 - q.T01);
 d.U1=U1; d.U2=U2; d.rpm1=rpm1; d.rpm2=rpm2;
 
 a.alpha=alpha; a.v=v; a.vx=vx; a.vth=vth;
+a.imid = imid;
 
 q.M = M;
 q.T0=T0; q.T=T;

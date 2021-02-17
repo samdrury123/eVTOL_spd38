@@ -1,7 +1,7 @@
 clear; close all;
 
 %% SPD Radial Eq 08/02
-bluebear = 0;
+bluebear = 1;
 % CRDF_flag = 0; % Change this maybe?
 
 %% Still to add:
@@ -82,7 +82,7 @@ sigmalist = [0.8 0.9 1 1.1 1.2];
 sigmalist = [0.7 0.8 0.9 1 1.1 1.2]; 
 % sigmalist = [0.9 1 1.1];
 philist = [0.5 0.6 0.7 0.8 0.9];
-% philist = [0.5 0.6 0.7 0.8];
+% philist = [0.7 0.8];
 % sigmalist=1.2;
 % philist=.8;
 
@@ -134,7 +134,8 @@ while abs(L.deltaL1) > 0.001/100 && abs(L.deltaL2) > 0.001/100
 [d,g,q] = CVanalysis_comp(d,g,q,L);
 % Meanline velocity triangles
 k=1; %(NRF), k = % of blade speed in first row
-[d,g,a,q,L] = VelTriangles(d,g,q,L,k);
+dev = (1-bluebear); % Deviation constant across the span (1) or DF constant (0)
+[d,g,a,q,L] = VelTriangles(d,g,q,L,k,dev);
 % Evaluate analytical velocity profiles and loss for each blade row, plus calculate shroud clearance and endwall losses
 % [g,L] = BladeLoss(d,g,a,q,L,k); % Return Re?
 end
@@ -176,7 +177,8 @@ while abs(L.deltaL1) > 0.001/100 && abs(L.deltaL2) > 0.001/100
 [d,g,q] = CVanalysis_comp(d,g,q,L);
 % Meanline velocity triangles
 k=0.5; %(CRF), k = % of blade speed in first row
-[d,g,a,q,L] = VelTriangles(d,g,q,L,k);
+dev = (1-bluebear); % Deviation constant across the span (1) or DF constant (0)
+[d,g,a,q,L] = VelTriangles(d,g,q,L,k,dev);
 % Evaluate analytical velocity profiles and loss for each blade row, plus calculate shroud clearance and endwall losses
 % [g,L] = BladeLoss(d,g,a,q,L,k); % Return Re?
 end
@@ -244,8 +246,7 @@ lims.Ltot = [min(min(N.Ltot(:)), min(C.Ltot(:))) max(max(N.Ltot(:)), max(C.Ltot(
 
 % Need to improve de Haller plotting
 PlotCharts(N,lims);
-PlotCharts(C,lims);
-
+% PlotCharts(C,lims);
+% PlotVels(design(24),1)
 % PlotVels(blah)
-% velocity triangles, profiles (hub tip mean)
-
+% velocity triangles, profiles (hub tip mean), chord

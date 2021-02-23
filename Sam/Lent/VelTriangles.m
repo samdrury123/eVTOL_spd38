@@ -276,8 +276,8 @@ p0(:,3,2) = p(:,3).*(1+(gam-1)*0.5*M(:,3,2).^2).^(gam/(gam-1));
 p0(:,1,3) = p(:,1).*(1+(gam-1)*0.5*M(:,1,3).^2).^(gam/(gam-1));
 
 % de Haller number = V2/V1 in relevant frame
-% d.DH(:,1) = v(:,2,2)./v(:,1,2);
-% d.DH(:,2) = v(:,3,3)./v(:,2,3);
+d.DHall(:,1) = v(:,2,2)./v(:,1,2);
+d.DHall(:,2) = v(:,3,3)./v(:,2,3);
 d.DH(1) = v(imid,2,2)./v(imid,1,2);
 d.DH(2) = v(imid,3,3)./v(imid,2,3);
 
@@ -406,11 +406,11 @@ for rr=1:2
     %% Calculate Losses
     
     % Shape factors for BL equations
-    H = 2;            % DT / MT - **How was this selected?**
+    H = 2.7;            % DT / MT - **How was this selected?**
     He = 4*H/(3*H-1); % ET / MT
 
     %Dissipation Coefficient as function of Reynolds - TURNED OFF 11/02
-    %   Re = vel1(rr)*C*rho(rr) / 18e-6;
+%     Re = vel1(rr)*C*rho(rr) / 18e-6;
     Cd = d.Cdnom;%*(Re/500000)^-0.2; % Correction due to effect of low Re (Dickens p154)
 
     %% Profile loss
@@ -483,17 +483,20 @@ for rr=1:2
     end
     
     % Storing velocity profiles for plotting later
-    x = linspace(0,C,21);
+    x = linspace(0,C,10);
     a.Vss(ii,1:size(x,2),rr) = profilefun_SS2(x).^(1/3);
     a.Vps(ii,1:size(x,2),rr) = profilefun_PS2(x).^(1/3);
     
     BLT_SS(ii,rr)=BLDT_SS;
     BLT_PS(ii,rr)=BLDT_PS;
-    p1(ii,rr) = 2 * solid(ii,rr) * ((BLMT_PS + BLMT_SS)/C) / cosd(adwn(ii)) * (0.5 * vdwn(ii)^2 / Tup(ii));  % mixing losses
+    p1(ii,rr) = 2 * solid(ii,rr) * ((BLMT_PS + BLMT_SS)/C) / cosd(adwn(ii)) * (0.5 * vdwn(ii)^2 / Tup(ii));  % mixing losses - this separation is explained just below Denton A3.7
     p2(ii,rr) = (solid(ii,rr)*(BLDT_PS + BLDT_SS + g.tTE)/C /cosd(adwn(ii)))^2 * (0.5 * vdwn(ii)^2 / Tup(ii)); % profile loss
     vLE_SSe(ii) = vLE_SS;
     vLE_PSe(ii) = vLE_PS;
     vTEe(ii) = vTE;
+    
+%     Reth_ps = vup(ii)*BLMT_PS*ro(ii,rr) / 18e-6
+%     Reth_ss = vup(ii)*BLMT_SS*ro(ii,rr) / 18e-6
     end
     % Calculate blade profile and mixing losses - in Dickens (9.3) and also
     % Denton 1993 A3.7
@@ -583,7 +586,7 @@ L.Loss2.prof=prof(2); L.Loss2.base=baseT(2); L.Loss2.tip=tip(2); L.Loss2.endwall
 L.Loss1.BLT_SS=BLT_SS(:,1); L.Loss1.BLT_PS=BLT_PS(:,1); L.Loss2.BLT_SS=BLT_SS(:,2); L.Loss2.BLT_PS=BLT_PS(:,2); 
 
 
-%% Calculating operating point quantities
+%% Calculating operating point quantities - MOVE THIS TO CVanalysis_comp
 
 % Power
 d.mdot = q.Mndp01 * g.A1 * p01 / (cp*q.T01)^0.5;

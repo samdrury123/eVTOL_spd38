@@ -63,20 +63,25 @@ for ii = 1:3 % radial position
     xlabel('x/{c_x}')
     ylabel('Velocity (m/s)')
     ylim(lim)
+    xlim([-0.1 1.1])
+    
     %     set(gca,'xtick',[])
     subplot(2,6,7:8); hold on; box on
     plot(xs,V2(:,ii),cols{ii});
     xlabel('x/{c_x}')
     ylabel('Velocity (m/s)')
     ylim(lim)
+    xlim([-0.1 1.1])
     %     set(gca,'ytick',[])
 end
 
-subplot(2,6,1:2); hold on;
+subplot(2,6,1:2); hold on; grid on
+set(gca,'xtick',[0 1], 'ygrid', 'off', 'xMinorTick', 'on', 'xMinorGrid','on')
 legend('Hub', 'Mean Line', 'Tip')
 title("Velocity profiles for Blade 1")
 
-subplot(2,6,7:8); hold on;
+subplot(2,6,7:8); hold on; grid on
+set(gca,'xtick',[0 1], 'ygrid', 'off', 'xMinorTick', 'on', 'xMinorGrid','on')
 legend('Hub', 'Mean Line', 'Tip')
 title("Velocity profiles for Blade 2")
 

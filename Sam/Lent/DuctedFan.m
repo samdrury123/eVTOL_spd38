@@ -1,7 +1,7 @@
 clear; close all;
 
 %% SPD Radial Eq 08/02
-bluebear = 0;
+bluebear = 1;
 
 %% Still to add:
 % Check what needs to be sent to CAD
@@ -45,13 +45,13 @@ if bluebear == 1
     g.n = 0.5; % Exponent for vortex design of conventional fan, n=1 is free, n=-1 is forced
     g.tTE = 2/1000; % Trailing edge thickness in m
     g.tmax = 0.163; % Max blade thickness, % of chord
-    g.gap = 0.001; % Shroud clearance in m
+    g.gap = 1/1000; % Shroud clearance in m
 else % Whittle eVTOL
     d.name = 'The Rt.Hon Whittle eVTOL';
     d.Th = 10; % Thrust
     d.u0 = 0; % Flight speed
     d.alt = 0; % Altitude in m
-    d.Cdnom = 0.0002; % Nominal dissipation coefficient for BL loss (Dickens p154)
+    d.Cdnom = 0.002; % Nominal dissipation coefficient for BL loss (Dickens p154)
     d.Cc = 0.6; % Contraction coefficient for shroud loss calculation - Yoon p5 quotes Cd = 0.7
     d.DF = 0.35; % Diffusion factor for Lieblein
     
@@ -63,7 +63,7 @@ else % Whittle eVTOL
     g.n = 0.5; % Exponent for vortex design of conventional fan, n=1 is free, n=-1 is forced
     g.tTE = 1/1000; % Trailing edge thickness in m
     g.tmax = 0.15; % Max blade thickness, % of chord
-    g.gap = 0.0005; % Shroud clearance in m %% CHANGE THIS TO % OF CHORD??
+    g.gap = 0.5/1000; % Shroud clearance in m %% CHANGE THIS TO % OF CHORD??
 end
 
 % Gas Constants
@@ -77,8 +77,11 @@ sigmalist = [0.7 0.8 0.9 1 1.1 1.2];
 % sigmalist = [0.9 1 1.1];
 philist = [0.5 0.6 0.7 0.8 0.9];
 % philist = [0.7 0.8];
-% sigmalist=1.1;
-% philist=.8;
+% sigmalist=[.9 1 1.1];
+% philist=.9;
+% These only really work for BB
+% sigmalist = [0.5 0.6 0.7 0.8 0.9 1 1.1 1.2];
+% philist = [0.3 0.4 0.5 0.6 0.7 0.8 0.9];
 
 % Initialise structs, plotting arrays
 design([ size(philist,2) size(sigmalist,2) ]) = struct();
@@ -132,6 +135,8 @@ dev = (1-bluebear); % Deviation constant across the span (1) or DF constant (0)
 [d,g,a,q,L] = VelTriangles(d,g,q,L,k,dev);
 % Evaluate analytical velocity profiles and loss for each blade row, plus calculate shroud clearance and endwall losses
 % [g,L] = BladeLoss(d,g,a,q,L,k); % Return Re?
+% L.deltaL1
+% L.deltaL2
 end
 NRF.d=d; NRF.g=g; NRF.a=a; NRF.q=q; NRF.L=L;
 
@@ -178,7 +183,6 @@ dev = (1-bluebear); % Deviation constant across the span (1) or DF constant (0)
 end
 CRF.d=d; CRF.g=g; CRF.a=a; CRF.q=q; CRF.L=L;
 
-
 % Finished loss loop so everything defined. The rest is gathering together
 % outputs
 % Hacking together arrays to plot
@@ -210,6 +214,8 @@ design(pp,ss).phisig = [d.phi, d.sigma];
 design(pp,ss).NRF = NRF; design(pp,ss).NRF.phisig = [d.phi, d.sigma];
 design(pp,ss).CRF = CRF; design(pp,ss).CRF.phisig = [d.phi, d.sigma];
 
+mtip(pp,ss) = d.Mtip*2;
+
 % % Inlet streamtube capture 
 % % Currently assumes isentropic inlet duct
 % Mndp00 = gam / (gam-1)^0.5 .* M0 .* (1 + (gam-1)/2.*M0.^2).^(-0.5*(gam+1)/(gam-1));
@@ -235,7 +241,7 @@ end
 %% Plotting
 % Limits used for plotting, ensures effective comparisons
 lims.Nb = [0 25]; % Sets limit of colormap for blade numbers
-lims.L = [0 0.5]; % Sets loss limits between 0 and 1
+lims.L = [0 0.6]; % Sets loss limits between 0 and 1
 lims.Ltot = [min(min(N.Ltot(:)), min(C.Ltot(:))) max(max(N.Ltot(:)), max(C.Ltot(:)))];
 
 % Need to improve de Haller plotting
@@ -244,3 +250,18 @@ PlotCharts(N,lims);
 % PlotVels(design(24),1)
 % PlotVels(blah)
 % velocity triangles, profiles (hub tip mean), chord
+
+% Plotting dH spanwise
+% figure; box on; hold on;
+% for i=1
+% y=linspace(0,1,6);
+% x=design(1,i+1).NRF.d.DHall;
+% plot(x,y)
+% end
+% legend;
+% plot(0.72*ones(6),y,'r','LineWidth',2)
+% xlabel('dH'); ylabel('% of span')
+% 
+% 
+% figure;
+% contourf(C.phis,C.sigmas,C.DH1); colorbar;

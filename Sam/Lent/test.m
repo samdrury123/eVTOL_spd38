@@ -13,36 +13,6 @@ end
 alt = 1000;
 atm = Altitude(alt); % At sea level
 
-% a([4 5]) = struct();
-% p=linspace(1,4,4);
-% q=linspace(0.1,0.4,4);
-% for i=1:4
-%     for j=1:5
-%         a(i,j).x.c = i*j;
-%         a(i,j).x.d = i*i;
-%         a(i,j).y = i;
-%     end
-% end
-% figure; hold on;
-% contourf(p,q,a.x); colorbar;
-
-% Nr=31;
-% r1 = linspace(20,60,Nr)';
-% r2 = linspace(20,60,Nr);
-% 
-% r5 = linspace(0,1,5); y5 = zeros(5,1);
-% r6 = linspace(0,1,6); y6 = zeros(6,1);
-% r7 = linspace(0,1,7); y7 = zeros(7,1);
-% r8 = linspace(0,1,8); y8 = zeros(8,1);
-% figure; hold on; grid off; box on;
-% plot(r5,y5, 'ro');
-% plot(r6,y6,'ko'); 
-% plot(r7,y7,'bo');
-% plot(r8,y8,'go');
-% rm=(0.5*(0.2^2+0.6^2))^0.5;
-% rm_n = (rm-0.2)/(0.6-0.2);
-% plot(rm_n,0,'rx');
-% legend;
 
 x=0.1:0.1:1;
 y=x.^2;
@@ -68,9 +38,31 @@ end
 
 
 a=[1 2 3 4 5 6; 7 8 9 10 11 12]';
-sum(a(2:5,2))
+sum(a(2:5,2));
 
 c=[1 2 3 4 5]/10;
 endwallfun = @(x,r) x.^2 + c(r);
-q = integral(@(x) endwallfun(x,5),0,2)
-cas(1:5) = 4
+q = integral(@(x) endwallfun(x,5),0,2);
+cas(1:5) = 4;
+
+
+
+
+options = optimset('PlotFcns',@optimplotfval);
+fun = @(x)100*(x(2) - x(1)^2)^2 + (1 - x(1))^2;
+x0 = [-1.2,1];
+x = fminsearch(fun,x0,options)
+
+
+
+
+
+
+
+
+
+
+
+
+
+

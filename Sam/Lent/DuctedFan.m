@@ -1,15 +1,14 @@
 clear; close all;
 
-%% SPD Radial Eq 08/02
+% Flag to change design - 0 = Whittle eVTOL
 bluebear = 0;
 
 %% Still to add:
 % Check what needs to be sent to CAD
 % Should gap be percentage of span?
-% Exit swirl
-% ERROR HANDLING
-% Add efficiencies - two motors has greater inefficiencies
-% On PlotVels, change x acis to [-0.1 1.1] and plot vLE as well as V?
+% Exit swirl?
+% Continual error handling
+% Add efficiencies 
 
 %% To be added in this branch:
 % DONE Vortex exponent
@@ -73,6 +72,7 @@ R = 287;
 cp = gam*R / (gam-1);
 q.gam=gam; q.R=R; q.cp=cp;
 
+% Arrays of phi and sigma to cover design space
 sigmalist = [0.8 0.9 1 1.1 1.2]; 
 % sigmalist = [0.7 0.8 0.9 1 1.1 1.2]; 
 % sigmalist = [0.9 1 1.1];
@@ -80,14 +80,9 @@ philist = [0.5 0.6 0.7 0.8 0.9];
 % philist = [0.9 0.92 0.94];
 % sigmalist=[0.9 0.92 0.94 0.96 0.98];
 % philist=.9;
-% These only really work for BB
-% sigmalist = [0.5 0.6 0.7 0.8 0.9 1 1.1 1.2];
-% philist = [0.3 0.4 0.5 0.6 0.7 0.8 0.9];
 
 % Initialise structs, plotting arrays
 design([ size(philist,2) size(sigmalist,2) ]) = struct();
-% NRFdesign = design;
-% CRFdesign = design;
 
 % Arrays for plotting - filling with NaNs ensures duff data doesn't skew contour plots
 init = NaN.*ones(size(philist,2), size(sigmalist,2)); 
@@ -128,16 +123,15 @@ L.deltaL1 = 1;
 L.deltaL2 = 1;
 
 while abs(L.deltaL1) > 0.001/100 && abs(L.deltaL2) > 0.001/100
-% Iteration loop to find T03 and T04, again improve so not absolute value
+% Iteration loop to find T03 and T04
 [d,g,q] = CVanalysis_comp(d,g,q,L);
-% Meanline velocity triangles
+
 k=1; %(NRF), k = % of blade speed in first row
 dev = (1-bluebear); % Deviation constant across the span (1) or DF constant (0)
+
+% Velocity triangles and losses for each blade row
 [d,g,a,q,L] = VelTriangles(d,g,q,L,k,dev);
-% Evaluate analytical velocity profiles and loss for each blade row, plus calculate shroud clearance and endwall losses
-% [g,L] = BladeLoss(d,g,a,q,L,k); % Return Re?
-% L.deltaL1
-% L.deltaL2
+
 end
 NRF.d=d; NRF.g=g; NRF.a=a; NRF.q=q; NRF.L=L;
 
@@ -171,16 +165,16 @@ L.L1 = 0;     % Entropy change in rotor
 L.L2 = 0;     % Entropy change in stator
 L.deltaL1 = 1;
 L.deltaL2 = 1;
-% Iteation loop for CRF losses
+
 while abs(L.deltaL1) > 0.001/100 && abs(L.deltaL2) > 0.001/100
 % Iteration loop to find T03 and T04, again improve so not absolute value
 [d,g,q] = CVanalysis_comp(d,g,q,L);
-% Meanline velocity triangles
+
 k=0.5; %(CRF), k = % of blade speed in first row
 dev = (1-bluebear); % Deviation constant across the span (1) or DF constant (0)
+
+% Velocity triangles and losses for each blade row
 [d,g,a,q,L] = VelTriangles(d,g,q,L,k,dev);
-% Evaluate analytical velocity profiles and loss for each blade row, plus calculate shroud clearance and endwall losses
-% [g,L] = BladeLoss(d,g,a,q,L,k); % Return Re?
 end
 CRF.d=d; CRF.g=g; CRF.a=a; CRF.q=q; CRF.L=L;
 
@@ -242,15 +236,16 @@ end
 %% Plotting
 % Limits used for plotting, ensures effective comparisons
 lims.N = [0 25]; % Sets limit of colormap for blade numbers
-lims.L = [0 0.6]; % Sets loss limits between 0 and 1
-lims.Ltot = [min(min(N.Ltot(:)), min(C.Ltot(:))) max(max(N.Ltot(:)), max(C.Ltot(:)))];
+lims.L = [0 0.6]; % Same loss range for comparing individual loss components
+lims.Ltot = [min(min(N.Ltot(:)), min(C.Ltot(:))) max(max(N.Ltot(:)), max(C.Ltot(:)))]; % Same range for NRF and CRF total loss 
 
-% Need to improve de Haller plotting
+% PlotCharts plots design points for N=NRF or C=CRF, as well as losses
 PlotCharts(N,lims);
 % PlotCharts(C,lims);
+
+% PlotVels plots velocity profiles, velocity triangles, and spanwise
+% chord/DF - 1=NRF, 2=CRF, could change this to just plot both NRF and CRF
 % PlotVels(design(24),1)
-% PlotVels(blah)
-% velocity triangles, profiles (hub tip mean), chord
 
 %% Saving files for CFD
 dr.geom = '';

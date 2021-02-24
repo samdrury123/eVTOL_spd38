@@ -1,7 +1,6 @@
 %% ---- FUNCTION: CONTROL VOLUME ANALYSIS FOR DUCTED FAN ---- %%
 function [d,g,q] = CVanalysis_comp(d,g,q,L)
 
-% REDO THIS
 % Function using non-dimensional compressible relations to analyse ducted
 % fans at the mean line
 

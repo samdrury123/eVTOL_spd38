@@ -1,7 +1,7 @@
 clear; close all;
 
 %% SPD Radial Eq 08/02
-bluebear = 1;
+bluebear = 0;
 
 %% Still to add:
 % Check what needs to be sent to CAD
@@ -76,8 +76,8 @@ sigmalist = [0.8 0.9 1 1.1 1.2];
 sigmalist = [0.7 0.8 0.9 1 1.1 1.2]; 
 % sigmalist = [0.9 1 1.1];
 philist = [0.5 0.6 0.7 0.8 0.9];
-% philist = [0.7 0.8];
-% sigmalist=[.9 1 1.1];
+philist = [0.9 0.92 0.94];
+sigmalist=[0.9 0.92 0.94 0.96 0.98];
 % philist=.9;
 % These only really work for BB
 % sigmalist = [0.5 0.6 0.7 0.8 0.9 1 1.1 1.2];

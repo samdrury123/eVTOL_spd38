@@ -1,7 +1,7 @@
 clear; close all;
 
 %% SPD Radial Eq 08/02
-bluebear = 1;
+bluebear = 0;
 
 %% Still to add:
 % Check what needs to be sent to CAD

@@ -44,11 +44,11 @@ subplot(2,4,5)
 contourf(phis,sigmas,D.rpms,25, 'edgecolor','none'); colorbar
 title("RPM"); xlabel("\phi"); ylabel("\sigma");
 subplot(2,4,6)
-contourf(phis,sigmas,D.N1,25, 'edgecolor','none'); colorbar; caxis(lim.Nb);
+contourf(phis,sigmas,D.N1,25, 'edgecolor','none'); colorbar; caxis(lim.N);
 title("Rotor blades"); xlabel("\phi"); ylabel("\sigma");
 % text(1.1,1.3, ['CRDF = ' num2str(CRDF_flag)],'color','b')
 subplot(2,4,7)
-contourf(phis,sigmas,D.N2,25, 'edgecolor','none'); colorbar; caxis(lim.Nb);
+contourf(phis,sigmas,D.N2,25, 'edgecolor','none'); colorbar; caxis(lim.N);
 title("Stator blades"); xlabel("\phi"); ylabel("\sigma");
 subplot(2,4,8)
 contourf(phis,sigmas,D.psis,25, 'edgecolor','none'); colorbar
@@ -138,8 +138,8 @@ contourf(phis,psis,D.rpms,25, 'edgecolor','none'); colorbar
 title("RPM"); xlabel("\phi"); ylabel("\psi");
 % text(1.1,0.8, ['CRDF = ' num2str(CRDF_flag)],'color','b')
 subplot(2,3,5)
-contourf(phis,psis,D.N1,25, 'edgecolor','none'); colorbar; caxis(lim.Nb);
+contourf(phis,psis,D.N1,25, 'edgecolor','none'); colorbar; caxis(lim.N);
 title("Rotor blades"); xlabel("\phi"); ylabel("\psi");
 subplot(2,3,6)
-contourf(phis,psis,D.N2,25, 'edgecolor','none'); colorbar; caxis(lim.Nb);
+contourf(phis,psis,D.N2,25, 'edgecolor','none'); colorbar; caxis(lim.N);
 title("Stator blades"); xlabel("\phi"); ylabel("\psi");

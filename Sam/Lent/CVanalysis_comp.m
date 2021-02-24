@@ -31,10 +31,10 @@ phi = d.phi;
 sigma = d.sigma;
 
 % Calculate geometry
-g.rc = g.D/2; 
-g.rh = g.rc*g.htrat;
-g.rm = ((g.rc^2+g.rh^2)/2)^0.5;
-g.A1 = pi*(g.rc^2 - g.rh^2);
+g.rcas = g.D/2; 
+g.rhub = g.rcas*g.htrat;
+g.rm = ((g.rcas^2+g.rhub^2)/2)^0.5;
+g.A1 = pi*(g.rcas^2 - g.rhub^2);
 g.A4 = g.A1 * sigma;
 
 % Flight Mach Number and stagnation quantities

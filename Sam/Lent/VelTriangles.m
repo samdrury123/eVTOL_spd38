@@ -29,7 +29,7 @@ function [d,g,a,q,L] = VelTriangles(d,g,q,L,k,dev)
 
 %% Unpack
 u1=d.u1; Um=d.Um; psi=d.psi; sigma=d.sigma;
-rm=g.rm; rh=g.rh; rc=g.rc;
+rm=g.rm; rh=g.rhub; rc=g.rcas;
 gam=q.gam; R=q.R; cp=q.cp;
 p01=q.p01; p4=q.p4; T03=q.T03; T1=q.T1; M1=q.M1; Mndp4=q.Mndp4;
 
@@ -320,25 +320,25 @@ for rr=1:2
     %   sc_rat = (d.DF - (1 - vel2(rr)./vel1(rr))) * 2 .* vel1(rr)  ./ delvt;
     sc_rat(:,rr) = (d.DF - (1 - vdwn./vup)) * 2 .* vup  ./ delvt(:,rr);
     s(:,rr) = C*sc_rat(:,rr);
-    g.Nb(rr) = round(2*pi*rm / s(imid,rr));
-    if g.Nb(rr)<1
-        g.Nb(rr) = NaN;
+    g.N(rr) = round(2*pi*rm / s(imid,rr));
+    if g.N(rr)<1
+        g.N(rr) = NaN;
         disp('Negative s/c')
         L.deltaL1 = 1e-10; % satisfy criterion to exit loop
         L.deltaL2 = 1e-10;
         a = 0;
         return
-    elseif g.Nb(rr)>60
-        g.Nb(rr) = NaN;
-        disp(['Number of blades in blade ' num2str(rr) ' exceeds 60'])
+    elseif g.N(rr)>80
+        g.N(rr) = NaN;
+        disp(['Number of blades in blade ' num2str(rr) ' exceeds 80'])
         L.deltaL1 = 1e-10; % satisfy criterion to exit loop
         L.deltaL2 = 1e-10;
         a = 0;
         return
     end
-    %   s = 2 * pi * rm / Nb(rr);
+    %   s = 2 * pi * rm / N(rr);
     %   solid = C/s;
-    g.s(:,rr) = 2 * pi * r / g.Nb(rr);
+    g.s(:,rr) = 2 * pi * r / g.N(rr);
     solid(:,rr) = C./g.s(:,rr);
 
     %% Chi, Chord, DF
@@ -593,7 +593,7 @@ d.mdot = q.Mndp01 * g.A1 * p01 / (cp*q.T01)^0.5;
 d.P = d.mdot * cp*(q.T03-q.T01);
 
 % Reaction
-d.Reaction = (T(:,2)-T(:,1))./(T(:,3)-T(:,1));
+a.Reaction = (T(:,2)-T(:,1))./(T(:,3)-T(:,1));
 
 % Tip Mach Number
 d.Mtip = (rpm1/60*2*pi*rc) / (gam*R*T(Nr,1))^0.5;

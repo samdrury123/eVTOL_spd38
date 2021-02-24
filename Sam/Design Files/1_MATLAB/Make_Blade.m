@@ -14,7 +14,7 @@ fid = fopen(iblfile, 'w');
 fprintf(fid,'Closed Index arclength\n');
 %%SAM
 
-rotation = -1; end
+rotation = -1; 
 
 
 num_slices = size(chi1,1);

@@ -41,7 +41,7 @@ clear; clc; close;
 %% -- 1. INPUTS -- %%
 
 % CRDF flag
-CRDF_flag = false;
+CRDF_flag = true;
 
 % ::: 1.1 Design Name ::: %
 d.name = '1';
@@ -195,10 +195,9 @@ else
 end
 
 %% ---- 5. Save blade designs to file ---- %%
-dr.geom = '';
+
 % % Save both types of design, rename structures to "d"
 d = NRF; save([dr.geom 'NRF_' NRF.d.name '.mat'],'d')
-% d = NRF; save(['NRF_' NRF.d.name '.mat'],'d')
 % save([dr.geom 'NRFibl_' NRF.d.name '.ibl'],'d')
 % d = CRF; save([dr.geom 'CRF_' CRF.d.name '.mat'],'d')
 

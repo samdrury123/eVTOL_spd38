@@ -32,8 +32,14 @@ Pc = (Thc^(3/2) / (2*ro*A)^0.5) / (etaA*etaM*etaE*etaB);    % Power in cruise, W
 Thh = m*g;                                                  % Thrust in hover, N
 Ph = (Thh^(3/2) / (2*ro*A)^0.5) / (etaA*etaM*etaE*etaB);    % Power in hover, W
 
+% FOM is around 0.67, could find refs to back the efficiencies up
+
 % Overall power and flight time
 Eb = bm*be*(1-SOCmin)*3600;                                      % Energy available from battery Wh
 tc = (Eb - Ph*(th))/Pc;                           % Flight time, mins
 R = tc*v / 1000;                                         % Range, km
 
+% Disc loading (force per area) Bikini paper - should be low
+% Blade tip speed - this would give v, then advance ratio
+% phi for props = tip velocity over speed - advance ratio
+% get disc loading, check looks sensible

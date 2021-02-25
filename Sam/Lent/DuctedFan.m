@@ -1,7 +1,7 @@
 clear; close all;
 
 % Flag to change design - 0 = Whittle eVTOL
-bluebear = 0;
+bluebear = 1;
 
 %% Still to add:
 % Check what needs to be sent to CAD
@@ -30,7 +30,7 @@ bluebear = 0;
 if bluebear == 1
     d.name = 'BlueBear';
     d.Th = 1500; % Thrust
-    d.u0 = 2*25.7; % Flight speed
+    d.u0 = 0;%2*25.7; % Flight speed
     d.alt = 0; % Altitude in m
     d.Cdnom = 0.002; % Nominal dissipation coefficient for BL loss    
     d.Cc = 0.6; % Contraction coefficient for shroud loss calculation
@@ -77,9 +77,19 @@ sigmalist = [0.8 0.9 1 1.1 1.2];
 % sigmalist = [0.7 0.8 0.9 1 1.1 1.2]; 
 % sigmalist = [0.9 1 1.1];
 philist = [0.5 0.6 0.7 0.8 0.9];
+
+%BB Opt
 % philist = [0.9 0.92 0.94];
 % sigmalist=[0.9 0.92 0.94 0.96 0.98];
-% philist=.9;
+
+%Whittle Opt
+% philist = [.5 .51 .52 .53 .54 .55];
+% sigmalist=[.78 .785 .79 .795 .8];
+% philist = linspace(0.51,0.55,10);
+% sigmalist = linspace(0.76,0.81,10);
+
+% sigmalist = .9734;
+% philist=.7388;
 
 % Initialise structs, plotting arrays
 design([ size(philist,2) size(sigmalist,2) ]) = struct();
@@ -240,7 +250,17 @@ lims.L = [0 0.6]; % Same loss range for comparing individual loss components
 lims.Ltot = [min(min(N.Ltot(:)), min(C.Ltot(:))) max(max(N.Ltot(:)), max(C.Ltot(:)))]; % Same range for NRF and CRF total loss 
 
 % PlotCharts plots design points for N=NRF or C=CRF, as well as losses
-PlotCharts(N,lims);
+if bluebear == 1
+    save(['bbN.mat'],'N', 'lims');
+    save(['bbC.mat'],'C', 'lims');
+else
+    save(['N.mat'],'N', 'lims');
+    save(['C.mat'],'C', 'lims');
+end
+
+% load('N.mat')
+% load('C.mat')
+% PlotCharts(N,lims);
 % PlotCharts(C,lims);
 
 % PlotVels plots velocity profiles, velocity triangles, and spanwise
@@ -248,13 +268,13 @@ PlotCharts(N,lims);
 % PlotVels(design(24),1)
 
 %% Saving files for CFD
-dr.geom = '';
-for i=1:size(philist,2)*size(sigmalist,2)
-    d = design(i).NRF;
-    save([dr.geom 'NRF_' d.d.name '_' num2str(i) '.mat'],'d');
-    d = design(i).CRF;
-    save([dr.geom 'CRF_' d.d.name '_' num2str(i) '.mat'],'d');
-end
+% dr.geom = '';
+% for i=1:size(philist,2)*size(sigmalist,2)
+%     d = design(i).NRF;
+%     save([dr.geom 'NRF_' d.d.name '_' num2str(i) '.mat'],'d');
+%     d = design(i).CRF;
+%     save([dr.geom 'CRF_' d.d.name '_' num2str(i) '.mat'],'d');
+% end
 
 
 %% Notes

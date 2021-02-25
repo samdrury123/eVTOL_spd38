@@ -34,8 +34,9 @@ bluebear = 0;
 % for pp = 1:size(philist,2)
 %     for ss = 1:size(sigmalist,2)     
 % tic
-options = optimset('PlotFcns',@optimplotfval);
-[x,fval] = fminsearch(@DuctedFanFunc, [0.6;0.7],options)
+x0 = [0.5 0.9]
+options = optimset('Display','iter','PlotFcns',@optimplotfval);
+[x,fval,exitflag,output] = fminsearch(@DuctedFanFunc, x0,options)
 
 
 %% Iteation loop for NRF losses

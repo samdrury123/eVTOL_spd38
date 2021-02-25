@@ -1,5 +1,5 @@
 function f = DuctedFanFunc(x)
-bluebear=1;
+bluebear=0;
 if bluebear == 1
     d.name = 'Blue Bear';
     d.Th = 1500; % Thrust
@@ -44,45 +44,51 @@ R = 287;
 cp = gam*R / (gam-1);
 q.gam=gam; q.R=R; q.cp=cp;
 
-sigmalist = [0.8 0.9 1 1.1 1.2]; 
-sigmalist = [0.7 0.8 0.9 1 1.1 1.2]; 
-% sigmalist = [0.9 1 1.1];
-philist = [0.5 0.6 0.7 0.8 0.9];
-% philist = [0.7 0.8];
-% sigmalist=[.9 1 1.1];
-% philist=.9;
-% These only really work for BB
-% sigmalist = [0.5 0.6 0.7 0.8 0.9 1 1.1 1.2];
-% philist = [0.3 0.4 0.5 0.6 0.7 0.8 0.9];
+% sigmalist = [0.8 0.9 1 1.1 1.2]; 
+% sigmalist = [0.7 0.8 0.9 1 1.1 1.2]; 
+% % sigmalist = [0.9 1 1.1];
+% philist = [0.5 0.6 0.7 0.8 0.9];
+% % philist = [0.7 0.8];
+% % sigmalist=[.9 1 1.1];
+% % philist=.9;
+% % These only really work for BB
+% % sigmalist = [0.5 0.6 0.7 0.8 0.9 1 1.1 1.2];
+% % philist = [0.3 0.4 0.5 0.6 0.7 0.8 0.9];
+% 
+% % Initialise structs, plotting arrays
+% design([ size(philist,2) size(sigmalist,2) ]) = struct();
+% % NRFdesign = design;
+% % CRFdesign = design;
+% 
+% % Arrays for plotting - filling with NaNs ensures duff data doesn't skew contour plots
+% init = NaN.*ones(size(philist,2), size(sigmalist,2)); 
+% N.phis = init;
+% N.sigmas = init;
+% N.etas = init;  % Fan efficiency 
+% N.Rs = init; % Reaction
+% N.rpms = init; % rpm
+% N.N1 = init; % Blade count row 1
+% N.N2 = init; % Blade count row 2
+% N.Frs = init; % Propulsive efficiency
+% N.psis = init;
+% N.FOMs = init; % Figure of Merit
+% N.Ltot = init;
+% N.L_eta = init;
+% N.profL = init;
+% N.baseL = init;
+% N.tipL = init;
+% N.endwallL = init;
+% N.DH1 = init; N.DH2 = init;
+% N.name = 'NRF';
+% C=N; C.name = 'CRF';
 
-% Initialise structs, plotting arrays
-design([ size(philist,2) size(sigmalist,2) ]) = struct();
-% NRFdesign = design;
-% CRFdesign = design;
-
-% Arrays for plotting - filling with NaNs ensures duff data doesn't skew contour plots
-init = NaN.*ones(size(philist,2), size(sigmalist,2)); 
-N.phis = init;
-N.sigmas = init;
-N.etas = init;  % Fan efficiency 
-N.Rs = init; % Reaction
-N.rpms = init; % rpm
-N.N1 = init; % Blade count row 1
-N.N2 = init; % Blade count row 2
-N.Frs = init; % Propulsive efficiency
-N.psis = init;
-N.FOMs = init; % Figure of Merit
-N.Ltot = init;
-N.L_eta = init;
-N.profL = init;
-N.baseL = init;
-N.tipL = init;
-N.endwallL = init;
-N.DH1 = init; N.DH2 = init;
-N.name = 'NRF';
-C=N; C.name = 'CRF';
 d.phi = x(1);
 d.sigma = x(2);
+
+% if x(1) < 0.5 || x(2) > 1.2
+%     f = 0.4
+
+iteration = [d.phi d.sigma]
 
 L.L1 = 0;     % Entropy change in rotor
 L.L2 = 0;     % Entropy change in stator
@@ -102,7 +108,12 @@ dev = (1-bluebear); % Deviation constant across the span (1) or DF constant (0)
 % L.deltaL2
 end
 NRF.d=d; NRF.g=g; NRF.a=a; NRF.q=q; NRF.L=L;
-f = 1-d.Fr*d.eta;
+if bluebear == 1
+    f = 1-d.Fr*d.eta;
+else
+    f = 1-d.eta;
+    f = 1-d.Mf;
+end
 
 % Finished loss loop so everything defined. The rest is gathering together
 % outputs

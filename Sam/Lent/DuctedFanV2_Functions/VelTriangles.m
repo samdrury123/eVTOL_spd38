@@ -298,6 +298,7 @@ for rr=1:2
         g.N(rr) = NaN;
         L.deltaL1 = 1e-10; % satisfy criterion to exit loop
         L.deltaL2 = 1e-10;
+        d.eta = 0.3; % Hard cliff edge for optimisation
         a = 0; % 'a' struct not initialised yet, so return null to satisfy function
         return
     elseif g.N(rr)>80
@@ -305,6 +306,7 @@ for rr=1:2
         g.N(rr) = NaN;
         L.deltaL1 = 1e-10; % satisfy criterion to exit loop
         L.deltaL2 = 1e-10;
+        d.eta = 0.3; % Hard cliff edge for optimisation
         a = 0;
         return
     end
@@ -478,6 +480,7 @@ for rr=1:2
     endwall_c = Cd * ((rm + hb/2)/rm)^3 / (vup(Nr)*Tup(Nr)*hb*cosd(aup(Nr))) * integral(@(x) endwallfun(x,Nr),0,Cx(Nr,rr));
     % Total
     endwall(rr) = (endwall_h + endwall_c);
+    
 end
 
 % Sum up losses

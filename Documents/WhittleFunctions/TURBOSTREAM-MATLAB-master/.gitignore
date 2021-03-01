@@ -1,0 +1,16 @@
+Makefile
+Makefile.in
+aclocal.m4
+configure
+executableName
+.deps/*
+config.log
+config.status
+autom4te.cache/*
+.DS_Store*
+*.o*
+*~
+*.cxx~
+*.hxx~
+*.cxx#
+*.hxx#

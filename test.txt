@@ -1,1 +1,0 @@
-TestFile to send, although this should be fairly easy considering I have already done it using SSH. However, an easier solution through FileZilla has proven not to be possible :(

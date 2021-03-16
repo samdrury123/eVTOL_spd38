@@ -1,4 +1,7 @@
-ERROR - C:\Program Files\PTC\Creo 7.0.0.0\Common Files\text\config.pro, linenum 1 :  Keyword 'DRAWING_SETUP_FILE' is not valid.
-ERROR - C:\Program Files\PTC\Creo 7.0.0.0\Common Files\text\config.pro, linenum 2 :  Keyword 'FORMAT_SETUP_FILE' is not valid.
-ERROR - C:\Program Files\PTC\Creo 7.0.0.0\Common Files\text\config.pro, linenum 11:  Keyword 'TODAYS_DATE_NOTE_FORMAT' is not valid.
-ERROR - C:\Program Files\PTC\Creo 7.0.0.0\Common Files\text\config.pro, linenum 13:  Keyword 'WELD_UI_STANDARD' is not valid.
+WdgMtb: ACCESS solid_surf_radio@swpbln_feat_type_wdg@CUT is AVAILABLE (CB)
+WdgMtb: ACCESS TrajColl_ChainConvOpClLoop@TrajColl@CUT is invisible (UI)
+WdgMtb: ACCESS solid_surf_radio@swpbln_feat_type_wdg@CUT is AVAILABLE (CB)
+WdgMtb: ACCESS TrajColl_ChainConvOpClLoop@TrajColl@CUT is invisible (UI)
+WdgMtb: ACCESS solid_surf_radio@swpbln_feat_type_wdg@CUT is AVAILABLE (CB)
+WdgMtb: ACCESS TrajColl_ChainConvOpClLoop@TrajColl@CUT is invisible (UI)
+gdi32_comm_shutdown wait for polling thread timed out.
